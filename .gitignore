@@ -36,3 +36,5 @@ Thumbs.db
 # Miscellaneous
 coverage/
 *.tmp
+
+apphosting.local.yaml
