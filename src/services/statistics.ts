@@ -1,189 +1,433 @@
-import { Match } from '../types/match';
-import { Player } from '../types/player';
+// services/statistics.ts
 
-export interface PlayerStats {
-  totalGames: number;
-  wins: number;
-  losses: number;
-  winRate: number;
-  averageScore: number;
-  currentStreak: number;
-  longestStreak: number;
-  preferredPartners: Array<{
-    partnerId: string;
-    gamesPlayed: number;
-    winRate: number;
-  }>;
-  recentPerformance: Array<{
-    matchId: string;
-    date: Date;
-    result: 'win' | 'loss';
-    score: number;
-  }>;
-}
-
-export interface TeamStats {
-  gamesPlayed: number;
-  wins: number;
-  losses: number;
-  winRate: number;
-  averageScore: number;
-  totalPoints: number;
-}
+import { 
+  Match, 
+  Player,
+  PlayerStats, 
+  BasicStats,
+  AdvancedStats,
+  TeamAnalytics,
+  Timeline,
+  MatchInsights,
+  LeaderboardEntry,
+  TeamSide, 
+  MatchResult
+} from '../types';
 
 export class StatisticsService {
-  calculatePlayerStats(playerId: string, matches: Match[]): PlayerStats {
+  // Helper method to get which team a player was on
+  private getTeamSide(match: Match, playerId: string): TeamSide {
+    return match.teams.team1.players.includes(playerId) ? 'team1' : 'team2';
+  }
+
+  // Get matches for a specific player, sorted by date
+  private getPlayerMatches(playerId: string, matches: Match[]): Match[] {
+    return matches
+      .filter(match => 
+        match.teams.team1.players.includes(playerId) ||
+        match.teams.team2.players.includes(playerId)
+      )
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
+  // Calculate basic statistics for a player
+  private calculateBasicStats(playerId: string, matches: Match[]): BasicStats {
     const playerMatches = matches.filter(match => 
       match.teams.team1.players.includes(playerId) ||
       match.teams.team2.players.includes(playerId)
     );
 
-    const stats: PlayerStats = {
-      totalGames: playerMatches.length,
-      wins: 0,
-      losses: 0,
-      winRate: 0,
-      averageScore: 0,
-      currentStreak: 0,
-      longestStreak: 0,
-      preferredPartners: [],
-      recentPerformance: []
-    };
+    let wins = 0, losses = 0, totalScore = 0;
+    let currentStreak = 0, bestStreak = 0;
 
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let totalScore = 0;
-    const partnerStats = new Map<string, { wins: number; games: number }>();
+    playerMatches.forEach(match => {
+      const teamSide = this.getTeamSide(match, playerId);
+      const isWin = match.winner === teamSide;
+      const score = match.teams[teamSide].score;
 
-    // Process matches chronologically
-    playerMatches
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .forEach(match => {
-        const isTeam1 = match.teams.team1.players.includes(playerId);
-        const team = isTeam1 ? match.teams.team1 : match.teams.team2;
-        const opposingTeam = isTeam1 ? match.teams.team2 : match.teams.team1;
-        const isWin = match.winner === (isTeam1 ? 'team1' : 'team2');
-
-        // Update basic stats
-        if (isWin) {
-          stats.wins++;
-          currentStreak = currentStreak > 0 ? currentStreak + 1 : 1;
-        } else {
-          stats.losses++;
-          currentStreak = currentStreak < 0 ? currentStreak - 1 : -1;
-        }
-
-        longestStreak = Math.max(longestStreak, Math.abs(currentStreak));
-        totalScore += team.score;
-
-        // Track partner stats
-        const partner = team.players.find(p => p !== playerId);
-        if (partner) {
-          const partnerData = partnerStats.get(partner) || { wins: 0, games: 0 };
-          partnerStats.set(partner, {
-            wins: partnerData.wins + (isWin ? 1 : 0),
-            games: partnerData.games + 1
-          });
-        }
-
-        // Track recent performance
-        if (stats.recentPerformance.length < 5) {
-          stats.recentPerformance.push({
-            matchId: match.id,
-            date: match.date,
-            result: isWin ? 'win' : 'loss',
-            score: team.score
-          });
-        }
-      });
-
-    // Calculate derived stats
-    stats.winRate = (stats.wins / stats.totalGames) * 100;
-    stats.averageScore = totalScore / stats.totalGames;
-    stats.currentStreak = currentStreak;
-    stats.longestStreak = longestStreak;
-
-    // Process preferred partners
-    stats.preferredPartners = Array.from(partnerStats.entries())
-      .map(([partnerId, data]) => ({
-        partnerId,
-        gamesPlayed: data.games,
-        winRate: (data.wins / data.games) * 100
-      }))
-      .sort((a, b) => b.winRate - a.winRate)
-      .slice(0, 3); // Top 3 partners
-
-    return stats;
-  }
-
-  calculateTeamStats(team: [string, string], matches: Match[]): TeamStats {
-    const teamMatches = matches.filter(match => {
-      const isTeam1 = match.teams.team1.players.every(p => team.includes(p));
-      const isTeam2 = match.teams.team2.players.every(p => team.includes(p));
-      return isTeam1 || isTeam2;
+      totalScore += score;
+      
+      if (isWin) {
+        wins++;
+        currentStreak = currentStreak >= 0 ? currentStreak + 1 : 1;
+      } else {
+        losses++;
+        currentStreak = currentStreak <= 0 ? currentStreak - 1 : -1;
+      }
+      bestStreak = Math.max(bestStreak, Math.abs(currentStreak));
     });
 
-    const stats: TeamStats = {
-      gamesPlayed: teamMatches.length,
-      wins: 0,
-      losses: 0,
-      winRate: 0,
-      averageScore: 0,
-      totalPoints: 0
+    return {
+      totalGames: playerMatches.length,
+      wins,
+      losses,
+      winRate: playerMatches.length > 0 ? (wins / playerMatches.length) * 100 : 0,
+      avgScore: playerMatches.length > 0 ? totalScore / playerMatches.length : 0,
+      currentStreak,
+      bestStreak
     };
+  }
+
+  // Calculate advanced statistics for a player
+  private calculateAdvancedStats(playerId: string, matches: Match[]): AdvancedStats {
+    const playerMatches = this.getPlayerMatches(playerId, matches);
+    const partnerStats = new Map<string, { games: number; wins: number; totalScore: number }>();
+
+    // Calculate form guide from last 5 matches
+    const formGuide = playerMatches.slice(0, 5).map(match => {
+      const teamSide = this.getTeamSide(match, playerId);
+      return match.winner === teamSide ? 'W' : 'L';
+    });
+
+    // Calculate team-specific scores
+    let team1Games = 0, team1Score = 0;
+    let team2Games = 0, team2Score = 0;
+
+    playerMatches.forEach(match => {
+      const teamSide = this.getTeamSide(match, playerId);
+      const score = match.teams[teamSide].score;
+      const isWin = match.winner === teamSide;
+      const partner = match.teams[teamSide].players.find(p => p !== playerId);
+
+      if (teamSide === 'team1') {
+        team1Games++;
+        team1Score += score;
+      } else {
+        team2Games++;
+        team2Score += score;
+      }
+
+      if (partner) {
+        const stats = partnerStats.get(partner) || { games: 0, wins: 0, totalScore: 0 };
+        stats.games++;
+        if (isWin) stats.wins++;
+        stats.totalScore += score;
+        partnerStats.set(partner, stats);
+      }
+    });
+
+    const preferredPartners = Array.from(partnerStats.entries())
+      .map(([partnerId, stats]) => ({
+        partnerId,
+        gamesPlayed: stats.games,
+        winRate: (stats.wins / stats.games) * 100,
+        avgScore: stats.totalScore / stats.games
+      }))
+      .sort((a, b) => b.winRate - a.winRate);
+
+    // Calculate match history
+    const matchHistory = playerMatches.map(match => {
+      const teamSide = this.getTeamSide(match, playerId);
+      const opposingTeam: TeamSide = teamSide === 'team1' ? 'team2' : 'team1';
+      const partner = match.teams[teamSide].players.find(p => p !== playerId) || '';
+
+      return {
+        matchId: match.id,
+        date: match.date,
+        team: teamSide,
+        score: match.teams[teamSide].score,
+        opponentScore: match.teams[opposingTeam].score,
+        result: match.winner === teamSide ? 'W' : 'L'as MatchResult,
+        partner
+      };
+    });
+
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+
+    return {
+      formGuide,
+      avgScoreAsTeam1: team1Games > 0 ? team1Score / team1Games : 0,
+      avgScoreAsTeam2: team2Games > 0 ? team2Score / team2Games : 0,
+      preferredPartners,
+      matchHistory,
+      performance: {
+        last5Games: this.calculatePerformanceScore(playerMatches.slice(0, 5), playerId),
+        last10Games: this.calculatePerformanceScore(playerMatches.slice(0, 10), playerId),
+        thisMonth: this.calculatePerformanceScore(
+          playerMatches.filter(m => m.date >= lastMonth),
+          playerId
+        ),
+        lastMonth: this.calculatePerformanceScore(
+          playerMatches.filter(m => 
+            m.date >= new Date(lastMonth.getFullYear(), lastMonth.getMonth() - 1, lastMonth.getDate()) &&
+            m.date < lastMonth
+          ),
+          playerId
+        )
+      }
+    };
+  }
+
+  // Calculate performance score for a set of matches
+  private calculatePerformanceScore(matches: Match[], playerId: string): number {
+    if (matches.length === 0) return 0;
+
+    return matches.reduce((score, match, index) => {
+      const teamSide = this.getTeamSide(match, playerId);
+      const weight = 1 - (index / matches.length) * 0.5; // Recent matches weighted more
+      const isWin = match.winner === teamSide;
+      const matchScore = match.teams[teamSide].score;
+      
+      return score + (((isWin ? 1 : 0) * 50 + matchScore) * weight);
+    }, 0) / matches.length;
+  }
+
+  // Generate timeline events for a player
+  private generatePlayerTimeline(playerId: string, matches: Match[]): Timeline[] {
+    const timeline: Timeline[] = [];
+    let currentStreak = 0;
+    const playerMatches = this.getPlayerMatches(playerId, matches);
+
+    playerMatches.forEach((match, index) => {
+      const teamSide = this.getTeamSide(match, playerId);
+      const isWin = match.winner === teamSide;
+      const opposingTeam = teamSide === 'team1' ? 'team2' : 'team1';
+
+      // Add match event
+      timeline.push({
+        date: match.date,
+        type: 'match',
+        detail: `${isWin ? 'Won' : 'Lost'} against ${
+          match.teams[opposingTeam].players.join(' & ')
+        } (${match.teams[teamSide].score}-${
+          match.teams[opposingTeam].score
+        })`
+      });
+
+      // Track streaks
+      if (isWin) {
+        currentStreak = currentStreak >= 0 ? currentStreak + 1 : 1;
+      } else {
+        currentStreak = currentStreak <= 0 ? currentStreak - 1 : -1;
+      }
+
+      // Add streak milestones
+      if (Math.abs(currentStreak) === 3) {
+        timeline.push({
+          date: match.date,
+          type: 'streak',
+          detail: `Achieved a ${currentStreak > 0 ? 'winning' : 'losing'} streak of ${
+            Math.abs(currentStreak)
+          } games`
+        });
+      }
+
+      // Add game count milestones
+      if (index === 9) {
+        timeline.push({
+          date: match.date,
+          type: 'milestone',
+          detail: 'Completed 10 matches'
+        });
+      }
+    });
+
+    return timeline.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
+  // Public method to get comprehensive player statistics
+  public calculatePlayerStats(playerId: string, matches: Match[]): PlayerStats {
+    const basic = this.calculateBasicStats(playerId, matches);
+    const advanced = this.calculateAdvancedStats(playerId, matches);
+    const timeline = this.generatePlayerTimeline(playerId, matches);
+
+    return { basic, advanced, timeline };
+  }
+
+  // Calculate chemistry and stats for a team pair
+  public calculateTeamChemistry(team: [string, string], matches: Match[]): TeamAnalytics {
+    const teamMatches = matches.filter(match =>
+      (match.teams.team1.players.includes(team[0]) && match.teams.team1.players.includes(team[1])) ||
+      (match.teams.team2.players.includes(team[0]) && match.teams.team2.players.includes(team[1]))
+    );
+
+    if (teamMatches.length === 0) {
+      return {
+        partnership: {
+          players: team,
+          gamesPlayed: 0,
+          wins: 0,
+          losses: 0,
+          winRate: 0,
+          avgScore: 0,
+          bestScore: 0,
+          worstScore: 0,
+          streaks: { current: 0, best: 0 },
+          recentGames: []
+        },
+        chemistry: 0
+      };
+    }
+
+    let wins = 0, totalScore = 0;
+    let bestScore = 0, worstScore = Infinity;
+    let currentStreak = 0, bestStreak = 0;
+    const recentGames: TeamAnalytics['partnership']['recentGames'] = [];
 
     teamMatches.forEach(match => {
-      const isTeam1 = match.teams.team1.players.every(p => team.includes(p));
-      const teamData = isTeam1 ? match.teams.team1 : match.teams.team2;
-      const isWin = match.winner === (isTeam1 ? 'team1' : 'team2');
+      const teamSide = match.teams.team1.players.includes(team[0]) ? 'team1' : 'team2';
+      const opposingTeam = teamSide === 'team1' ? 'team2' : 'team1';
+      const score = match.teams[teamSide].score;
+      const isWin = match.winner === teamSide;
 
-      if (isWin) stats.wins++;
-      else stats.losses++;
+      totalScore += score;
+      bestScore = Math.max(bestScore, score);
+      worstScore = Math.min(worstScore, score);
 
-      stats.totalPoints += teamData.score;
-    });
+      if (isWin) {
+        wins++;
+        currentStreak = currentStreak >= 0 ? currentStreak + 1 : 1;
+      } else {
+        currentStreak = currentStreak <= 0 ? currentStreak - 1 : -1;
+      }
+      bestStreak = Math.max(bestStreak, Math.abs(currentStreak));
 
-    stats.winRate = (stats.wins / stats.gamesPlayed) * 100;
-    stats.averageScore = stats.totalPoints / stats.gamesPlayed;
-
-    return stats;
-  }
-
-  getLeaderboard(players: Player[], matches: Match[]): Array<{
-    playerId: string;
-    stats: PlayerStats;
-  }> {
-    return players
-      .map(player => ({
-        playerId: player.id,
-        stats: this.calculatePlayerStats(player.id, matches)
-      }))
-      .sort((a, b) => b.stats.winRate - a.stats.winRate);
-  }
-
-  getMostSuccessfulPairings(matches: Match[]): Array<{
-    players: [string, string];
-    stats: TeamStats;
-  }> {
-    const teams = new Map<string, [string, string]>();
-    
-    // Collect all unique team combinations
-    matches.forEach(match => {
-      [match.teams.team1, match.teams.team2].forEach(team => {
-        const teamKey = team.players.sort().join('-');
-        if (!teams.has(teamKey)) {
-          teams.set(teamKey, team.players as [string, string]);
-        }
+      recentGames.push({
+        matchId: match.id,
+        date: match.date,
+        score: score,
+        opponentScore: match.teams[opposingTeam].score,
+        result: isWin ? 'W' : 'L'
       });
     });
 
-    // Calculate stats for each team
-    return Array.from(teams.values())
-      .map(team => ({
+    // Calculate chemistry score (0-100)
+    const winRateScore = (wins / teamMatches.length) * 40; // Max 40 points for win rate
+    const consistencyScore = (1 - (bestScore - worstScore) / bestScore) * 30; // Max 30 points for consistency
+    const streakScore = (bestStreak / 5) * 30; // Max 30 points for streak (normalized to 5 games)
+
+    return {
+      partnership: {
         players: team,
-        stats: this.calculateTeamStats(team, matches)
+        gamesPlayed: teamMatches.length,
+        wins,
+        losses: teamMatches.length - wins,
+        winRate: (wins / teamMatches.length) * 100,
+        avgScore: totalScore / teamMatches.length,
+        bestScore,
+        worstScore,
+        streaks: {
+          current: currentStreak,
+          best: bestStreak
+        },
+        recentGames: recentGames.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 5)
+      },
+      chemistry: Math.min(100, Math.round(winRateScore + consistencyScore + streakScore))
+    };
+  }
+
+  // Generate leaderboard with rankings
+  public generateLeaderboard(players: Player[], matches: Match[]): LeaderboardEntry[] {
+    return players
+      .map(player => {
+        const stats = this.calculatePlayerStats(player.id, matches);
+        return {
+          player,
+          stats,
+          rank: 0,
+          rankChange: 0,
+          compositeScore:
+            (stats.basic.winRate * 0.4) + // 40% weight to win rate
+            (stats.advanced.performance.last10Games * 0.3) + // 30% weight to recent performance
+            (stats.basic.avgScore * 0.2) + // 20% weight to average score
+            (Math.abs(stats.basic.currentStreak) * 0.1) // 10% weight to current streak
+        };
+      })
+      .sort((a, b) => b.compositeScore - a.compositeScore)
+      .map((entry, index) => ({
+        ...entry,
+        rank: index + 1
+      }));
+  }
+
+  // Generate insights about all matches
+  public generateMatchInsights(matches: Match[]): MatchInsights {
+    const completedMatches = matches.filter(m => m.status === 'completed');
+    
+    let totalScore = 0;
+    let highestScore = 0;
+    let smallestScoreDiff = Infinity;
+    let largestScoreDiff = 0;
+    let closestMatch: Match | null = null;
+    let mostDecisiveMatch: Match | null = null;
+
+    // Track trends
+    const dayCount: Record<string, number> = {};
+    const timeCount: Record<string, number> = {};
+    const scoresByDate = new Map<string, number[]>();
+
+    completedMatches.forEach(match => {
+      const team1Score = match.teams.team1.score;
+      const team2Score = match.teams.team2.score;
+      const totalMatchScore = team1Score + team2Score;
+      const scoreDiff = Math.abs(team1Score - team2Score);
+
+      totalScore += totalMatchScore;
+      highestScore = Math.max(highestScore, Math.max(team1Score, team2Score));
+
+      if (scoreDiff < smallestScoreDiff) {
+        smallestScoreDiff = scoreDiff;
+        closestMatch = match;
+      }
+
+      if (scoreDiff > largestScoreDiff) {
+        largestScoreDiff = scoreDiff;
+        mostDecisiveMatch = match;
+      }
+
+      // Track day and time trends
+      const day = match.date.toLocaleDateString('en-US', { weekday: 'long' });
+      const hour = match.date.getHours();
+      const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
+
+      dayCount[day] = (dayCount[day] || 0) + 1;
+      timeCount[timeSlot] = (timeCount[timeSlot] || 0) + 1;
+
+      // Track scores by date for trend analysis
+      const dateKey = match.date.toISOString().split('T')[0];
+      const currentScores = scoresByDate.get(dateKey) || [];
+      currentScores.push(totalMatchScore);
+      scoresByDate.set(dateKey, currentScores);
+    });
+
+    // Calculate average scores trend
+    const averageScoresTrend = Array.from(scoresByDate.entries())
+      .map(([date, scores]) => ({
+        date: new Date(date),
+        avgScore: scores.reduce((a, b) => a + b, 0) / scores.length
       }))
-      .filter(team => team.stats.gamesPlayed >= 3) // Min 3 games played together
-      .sort((a, b) => b.stats.winRate - a.stats.winRate);
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    return {
+      general: {
+        totalMatches: completedMatches.length,
+        averageScore: completedMatches.length > 0 ? totalScore / (completedMatches.length * 2) : 0,
+        highestScore,
+        closestMatch: closestMatch ? {
+          matchId: closestMatch.id,
+          score: `${closestMatch.teams.team1.score}-${closestMatch.teams.team2.score}`,
+          date: closestMatch.date
+        } : {
+          matchId: '',
+          score: '0-0',
+          date: new Date()
+        },
+        mostDecisive: mostDecisiveMatch ? {
+          matchId: mostDecisiveMatch.id,
+          score: `${mostDecisiveMatch.teams.team1.score}-${mostDecisiveMatch.teams.team2.score}`,
+          date: mostDecisiveMatch.date
+        } : {
+          matchId: '',
+          score: '0-0',
+          date: new Date()
+        }
+      },
+      trends: {
+        byDay: dayCount,
+        byTime: timeCount,
+        averageScoresTrend
+      }
+    };
   }
 }

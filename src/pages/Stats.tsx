@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import PlayerStatsCard from '../components/stats/PlayerStatsCard';
 import { StatisticsService } from '../services/statistics';
-import type { Player } from '../types/player';
-import type { Match } from '../types/match';
+import { Match } from '../types/match';
+import { Player } from '../types/player';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { formatDate } from '../utils/dateUtils';
 
 const Stats = () => {
   const [loading, setLoading] = useState(true);
@@ -13,9 +15,9 @@ const Stats = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'players' | 'teams'>('overview');
-
-  const statisticsService = new StatisticsService();
+  const [activeTab, setActiveTab] = useState<'overview' | 'players' | 'teams' | 'trends'>('overview');
+  
+  const statisticsService = useMemo(() => new StatisticsService(), []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,58 +60,153 @@ const Stats = () => {
     fetchData();
   }, []);
 
+  const insights = useMemo(() => {
+    if (!matches.length) return null;
+    return statisticsService.generateMatchInsights(matches);
+  }, [matches, statisticsService]);
+
+  const leaderboard = useMemo(() => {
+    if (!players.length || !matches.length) return [];
+    return statisticsService.generateLeaderboard(players, matches);
+  }, [players, matches, statisticsService]);
+
   const getPlayerName = (playerId: string) => {
     const player = players.find(p => p.id === playerId);
     return player ? player.name : 'Unknown Player';
   };
 
   const renderOverview = () => {
-    const completedMatches = matches.filter(m => m.status === 'completed');
-    const totalPoints = completedMatches.reduce((sum, match) => 
-      sum + match.teams.team1.score + match.teams.team2.score, 0
-    );
-    const avgPointsPerMatch = completedMatches.length > 0 
-      ? totalPoints / completedMatches.length 
-      : 0;
+    if (!insights) return null;
+
+    const { general, trends } = insights;
+    const matchTrends = Object.entries(trends.byDay).map(([day, count]) => ({
+      day,
+      matches: count
+    }));
+
+    const scoreTrends = trends.averageScoresTrend.map(trend => ({
+      date: formatDate(trend.date, 'date'),
+      score: trend.avgScore
+    }));
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Total Matches</h3>
-          <p className="text-3xl font-bold text-blue-600">{matches.length}</p>
-          <p className="text-sm text-gray-500 mt-1">
-            {completedMatches.length} completed
-          </p>
+      <div className="space-y-6">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold text-gray-700">Total Matches</h3>
+            <p className="text-3xl font-bold text-blue-600">{general.totalMatches}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold text-gray-700">Average Score</h3>
+            <p className="text-3xl font-bold text-green-600">
+              {general.averageScore.toFixed(1)}
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold text-gray-700">Highest Score</h3>
+            <p className="text-3xl font-bold text-purple-600">{general.highestScore}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold text-gray-700">Active Players</h3>
+            <p className="text-3xl font-bold text-yellow-600">{players.length}</p>
+          </div>
         </div>
 
+        {/* Match Distribution Chart */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Active Players</h3>
-          <p className="text-3xl font-bold text-blue-600">{players.length}</p>
-          <p className="text-sm text-gray-500 mt-1">
-            {players.filter(p => p.availability?.status === 'available').length} available
-          </p>
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Matches by Day</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={matchTrends}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="matches" fill="#4F46E5" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
+        {/* Score Trends */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Avg Points/Match</h3>
-          <p className="text-3xl font-bold text-blue-600">
-            {avgPointsPerMatch.toFixed(1)}
-          </p>
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Score Trends</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={scoreTrends}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line 
+                  type="monotone" 
+                  dataKey="score" 
+                  stroke="#4F46E5"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Total Points</h3>
-          <p className="text-3xl font-bold text-blue-600">{totalPoints}</p>
+        {/* Notable Matches */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Closest Match</h3>
+            <p className="text-2xl font-bold text-blue-600">{general.closestMatch.score}</p>
+            <p className="text-sm text-gray-600">
+              {formatDate(general.closestMatch.date, 'full')}
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Most Decisive</h3>
+            <p className="text-2xl font-bold text-blue-600">{general.mostDecisive.score}</p>
+            <p className="text-sm text-gray-600">
+              {formatDate(general.mostDecisive.date, 'full')}
+            </p>
+          </div>
         </div>
       </div>
     );
   };
+
+  const renderLeaderboard = () => (
+    <div className="space-y-4">
+      {leaderboard.map((entry) => (
+        <div
+          key={entry.player.id}
+          className="bg-white p-4 rounded-lg shadow flex items-center"
+        >
+          <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+            <span className="text-xl font-bold text-blue-600">#{entry.rank}</span>
+          </div>
+          <div className="ml-4 flex-grow">
+            <h3 className="font-semibold">{entry.player.name}</h3>
+            <div className="text-sm text-gray-600">
+              {entry.stats.basic.wins} wins, {entry.stats.basic.losses} losses
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-blue-600">
+              {entry.stats.basic.winRate.toFixed(1)}%
+            </div>
+            <div className="text-sm text-gray-600">Win Rate</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   const renderPlayerStats = () => {
     if (!selectedPlayer) return null;
 
     const playerStats = statisticsService.calculatePlayerStats(selectedPlayer, matches);
     const selectedPlayerData = players.find(p => p.id === selectedPlayer);
+    console.log('Stats being passed to PlayerStatsCard:', playerStats);
+
+    if (!selectedPlayerData) return null;
 
     return (
       <div className="space-y-6">
@@ -117,7 +214,7 @@ const Stats = () => {
           <select
             value={selectedPlayer}
             onChange={(e) => setSelectedPlayer(e.target.value)}
-            className="rounded border-gray-300"
+            className="rounded border-gray-300 py-2"
           >
             {players.map(player => (
               <option key={player.id} value={player.id}>
@@ -126,68 +223,223 @@ const Stats = () => {
             ))}
           </select>
         </div>
-
-        {selectedPlayerData && (
-          <PlayerStatsCard
-            playerName={selectedPlayerData.name}
-            stats={playerStats}
-            getPlayerName={getPlayerName}
-          />
-        )}
+        
+        <PlayerStatsCard
+          playerName={selectedPlayerData.name}
+          stats={playerStats}
+          matches={matches}
+          playerId={selectedPlayer}
+          getPlayerName={getPlayerName}
+        />
       </div>
     );
   };
 
   const renderTeamStats = () => {
-    const successfulPairings = statisticsService.getMostSuccessfulPairings(matches);
+    const teamPairs = players.flatMap((p1, i) => 
+      players.slice(i + 1).map(p2 => [p1.id, p2.id] as [string, string])
+    );
+
+    const teamAnalytics = teamPairs
+      .map(team => ({
+        team,
+        analytics: statisticsService.calculateTeamChemistry(team, matches)
+      }))
+      .filter(({ analytics }) => analytics.partnership.gamesPlayed > 0)
+      .sort((a, b) => b.analytics.chemistry - a.analytics.chemistry);
 
     return (
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold">Most Successful Teams</h3>
-        <div className="grid gap-4">
-          {successfulPairings.map(({ players: teamPlayers, stats }) => (
-            <div 
-              key={teamPlayers.join('-')} 
-              className="bg-white p-4 rounded-lg shadow"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h4 className="font-semibold">
-                    {getPlayerName(teamPlayers[0])} & {getPlayerName(teamPlayers[1])}
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    {stats.gamesPlayed} games played
-                  </p>
+      <div className="space-y-6">
+        {teamAnalytics.map(({ team, analytics }) => (
+          <div key={team.join('-')} className="bg-white rounded-lg shadow p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">
+                  {getPlayerName(team[0])} & {getPlayerName(team[1])}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {analytics.partnership.gamesPlayed} games together
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-blue-600">
+                  {analytics.chemistry}%
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-blue-600">
-                    {stats.winRate.toFixed(1)}%
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Win Rate
-                  </p>
+                <div className="text-sm text-gray-600">Chemistry</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="bg-gray-50 p-3 rounded">
+                <div className="text-sm text-gray-600">Win Rate</div>
+                <div className="text-lg font-semibold">
+                  {analytics.partnership.winRate.toFixed(1)}%
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div className="bg-gray-50 p-2 rounded">
-                  <p className="text-gray-600">Wins</p>
-                  <p className="font-semibold">{stats.wins}</p>
+              <div className="bg-gray-50 p-3 rounded">
+                <div className="text-sm text-gray-600">Avg Score</div>
+                <div className="text-lg font-semibold">
+                  {analytics.partnership.avgScore.toFixed(1)}
                 </div>
-                <div className="bg-gray-50 p-2 rounded">
-                  <p className="text-gray-600">Avg Score</p>
-                  <p className="font-semibold">{stats.averageScore.toFixed(1)}</p>
-                </div>
-                <div className="bg-gray-50 p-2 rounded">
-                  <p className="text-gray-600">Total Points</p>
-                  <p className="font-semibold">{stats.totalPoints}</p>
+              </div>
+              <div className="bg-gray-50 p-3 rounded">
+                <div className="text-sm text-gray-600">Best Score</div>
+                <div className="text-lg font-semibold">
+                  {analytics.partnership.bestScore}
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+
+            {/* Recent Games */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Recent Games</h4>
+              <div className="space-y-2">
+                {analytics.partnership.recentGames.map(game => (
+                  <div 
+                    key={game.matchId}
+                    className={`flex justify-between items-center p-2 rounded ${
+                      game.result === 'W' ? 'bg-green-50' : 'bg-red-50'
+                    }`}
+                  >
+                    <div className="text-sm">
+                      {formatDate(game.date, 'date')}
+                    </div>
+                    <div className="font-medium">
+                      {game.score} - {game.opponentScore}
+                    </div>
+                    <div className={game.result === 'W' ? 'text-green-600' : 'text-red-600'}>
+                      {game.result}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   };
+
+  const renderTrends = () => (
+    <div className="space-y-6">
+      {/* Time Distribution */}
+      {insights && (
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Match Time Distribution</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={Object.entries(insights.trends.byTime).map(([time, count]) => ({
+                time,
+                matches: count
+              }))}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="time" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="matches" fill="#4F46E5" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Score Distribution */}
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">Score Distribution</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={
+              Object.entries(
+                matches
+                  .filter(m => m.status === 'completed')
+                  .reduce((acc, match) => {
+                    const score1 = match.teams.team1.score;
+                    const score2 = match.teams.team2.score;
+                    acc[score1] = (acc[score1] || 0) + 1;
+                    acc[score2] = (acc[score2] || 0) + 1;
+                    return acc;
+                  }, {} as Record<number, number>)
+              ).map(([score, count]) => ({
+                score: Number(score),
+                occurrences: count
+              })).sort((a, b) => a.score - b.score)
+            }>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="score" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="occurrences" fill="#4F46E5" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Win Margin Distribution */}
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">Win Margin Distribution</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={
+              Object.entries(
+                matches
+                  .filter(m => m.status === 'completed')
+                  .reduce((acc, match) => {
+                    const margin = Math.abs(
+                      match.teams.team1.score - match.teams.team2.score
+                    );
+                    acc[margin] = (acc[margin] || 0) + 1;
+                    return acc;
+                  }, {} as Record<number, number>)
+              ).map(([margin, count]) => ({
+                margin: Number(margin),
+                matches: count
+              })).sort((a, b) => a.margin - b.margin)
+            }>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="margin" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="matches" fill="#4F46E5" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Form Comparison */}
+      {leaderboard.length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Player Form Comparison</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={leaderboard.slice(0, 5).map(entry => ({
+                name: entry.player.name,
+                ...entry.stats.advanced.performance
+              }))}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="category" dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Line 
+                  type="monotone" 
+                  dataKey="last5Games" 
+                  name="Last 5 Games"
+                  stroke="#4F46E5" 
+                  strokeWidth={2}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="last10Games" 
+                  name="Last 10 Games"
+                  stroke="#10B981" 
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   if (loading) {
     return <LoadingSpinner fullScreen />;
@@ -207,7 +459,7 @@ const Stats = () => {
       
       {/* Navigation Tabs */}
       <div className="flex space-x-1 border-b">
-        {(['overview', 'players', 'teams'] as const).map((tab) => (
+        {(['overview', 'players', 'teams', 'trends'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -225,8 +477,18 @@ const Stats = () => {
       {/* Content based on active tab */}
       <div className="pt-4">
         {activeTab === 'overview' && renderOverview()}
-        {activeTab === 'players' && renderPlayerStats()}
+        {activeTab === 'players' && (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-1">
+              {renderLeaderboard()}
+            </div>
+            <div className="lg:col-span-3">
+              {renderPlayerStats()}
+            </div>
+          </div>
+        )}
         {activeTab === 'teams' && renderTeamStats()}
+        {activeTab === 'trends' && renderTrends()}
       </div>
     </div>
   );

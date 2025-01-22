@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, addDoc, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { Player, PlayerFormData } from '../types/player';
+import { Match } from '../types/match';
+import { StatisticsService } from '../services/statistics';
 
 const Players = () => {
   const [players, setPlayers] = useState<Player[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -15,50 +18,100 @@ const Players = () => {
     availability: 'available'
   });
 
-  // Fetch players
+  const statisticsService = useMemo(() => new StatisticsService(), []);
+
+  // Fetch players and matches
   useEffect(() => {
-    const fetchPlayers = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const querySnapshot = await getDocs(collection(db, 'players'));
-        const playersData = querySnapshot.docs.map(doc => ({
+        const [playersSnap, matchesSnap] = await Promise.all([
+          getDocs(collection(db, 'players')),
+          getDocs(collection(db, 'matches'))
+        ]);
+        
+        const playersData = playersSnap.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Player[];
+
+        const matchesData = matchesSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          date: doc.data().date.toDate(),
+          createdAt: doc.data().createdAt.toDate(),
+          updatedAt: doc.data().updatedAt.toDate()
+        })) as Match[];
+
         setPlayers(playersData);
+        setMatches(matchesData);
       } catch (err) {
-        setError('Failed to fetch players');
+        setError('Failed to fetch data');
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPlayers();
+    fetchData();
   }, []);
+
+  // Calculate player statistics
+  const playerStats = useMemo(() => {
+    return players.map(player => ({
+      player,
+      stats: statisticsService.calculatePlayerStats(player.id, matches)
+    }));
+  }, [players, matches, statisticsService]);
 
   // Add new player
   const handleAddPlayer = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setLoading(true);
-      const newPlayer = {
+      const timestamp = Timestamp.now();
+      
+      const firestorePlayer = {
         ...formData,
         stats: {
           totalGames: 0,
           wins: 0,
           losses: 0,
-          winPercentage: 0
+          winRate: 0,
+          avgScore: 0,
+          currentStreak: 0,
+          bestStreak: 0,
+          winPercentage: 0,
+          skillRating: 50,
+          recentPerformance: 0,
+          preferredPartners: [],
+          streak: {
+            current: 0,
+            best: 0,
+            type: null as 'win' | 'loss' | null
+          }
         },
         availability: {
           status: formData.availability,
-          lastUpdated: Timestamp.now()
+          lastUpdated: timestamp
         },
-        createdAt: Timestamp.now()
+        createdAt: timestamp
       };
-
-      const docRef = await addDoc(collection(db, 'players'), newPlayer);
-      setPlayers([...players, { ...newPlayer, id: docRef.id } as unknown as Player]);
+  
+      const docRef = await addDoc(collection(db, 'players'), firestorePlayer);
+  
+      const statePlayer: Player = {
+        ...firestorePlayer,
+        id: docRef.id,
+        // Remove lastPlayed entirely for new players (it will be undefined)
+        availability: {
+          ...firestorePlayer.availability,
+          lastUpdated: timestamp.toDate()
+        },
+        createdAt: timestamp.toDate()
+      };
+      
+      setPlayers(prevPlayers => [...prevPlayers, statePlayer]);
       setShowAddForm(false);
       setFormData({ name: '', email: '', availability: 'available' });
     } catch (err) {
@@ -92,6 +145,111 @@ const Players = () => {
       setError('Failed to update availability');
       console.error(err);
     }
+  };
+
+  const renderPlayerCard = (player: Player) => {
+    const playerStat = playerStats.find(p => p.player.id === player.id);
+    if (!playerStat) return null;
+
+    const stats = playerStat.stats;
+    const formGuide = stats.advanced.formGuide;
+
+    return (
+      <div key={player.id} className="bg-white p-6 rounded-lg shadow space-y-4">
+        {/* Player Header */}
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-lg font-semibold">{player.name}</h3>
+            <p className="text-sm text-gray-600">{player.email}</p>
+          </div>
+          <select
+            value={player.availability.status}
+            onChange={(e) => handleUpdateAvailability(player.id, e.target.value as 'available' | 'unavailable')}
+            className={`text-sm rounded px-3 py-1 ${
+              player.availability.status === 'available' 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-red-100 text-red-800'
+            }`}
+          >
+            <option value="available">Available</option>
+            <option value="unavailable">Unavailable</option>
+          </select>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-gray-50 p-4 rounded">
+            <p className="text-sm text-gray-600">Win Rate</p>
+            <p className="text-xl font-semibold">
+              {stats.basic.winRate.toFixed(1)}%
+            </p>
+            <p className="text-sm text-gray-500">
+              {stats.basic.wins}W - {stats.basic.losses}L
+            </p>
+          </div>
+          <div className="bg-gray-50 p-4 rounded">
+            <p className="text-sm text-gray-600">Average Score</p>
+            <p className="text-xl font-semibold">
+              {stats.basic.avgScore.toFixed(1)}
+            </p>
+          </div>
+        </div>
+
+        {/* Form Guide */}
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-2">Recent Form</p>
+          <div className="flex space-x-2">
+            {formGuide.map((result, idx) => (
+              <div
+                key={idx}
+                className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${
+                  result === 'W'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                }`}
+              >
+                {result}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Performance Metrics */}
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-2">Performance</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-600">Last 5 Games</p>
+              <p className="font-medium">
+                {stats.advanced.performance.last5Games.toFixed(1)}%
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">This Month</p>
+              <p className="font-medium">
+                {stats.advanced.performance.thisMonth.toFixed(1)}%
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Preferred Partners */}
+        {stats.advanced.preferredPartners.length > 0 && (
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">Best Partner</p>
+            <div className="bg-gray-50 p-3 rounded">
+              <p className="font-medium">
+                {players.find(p => p.id === stats.advanced.preferredPartners[0].partnerId)?.name}
+              </p>
+              <p className="text-sm text-gray-600">
+                {stats.advanced.preferredPartners[0].winRate.toFixed(1)}% Win Rate
+                ({stats.advanced.preferredPartners[0].gamesPlayed} games)
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (loading && players.length === 0) {
@@ -128,7 +286,7 @@ const Players = () => {
                   type="text"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded border-gray-300"
                   required
                 />
               </div>
@@ -138,7 +296,7 @@ const Players = () => {
                   type="email"
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
-                  className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded border-gray-300"
                   required
                 />
               </div>
@@ -146,8 +304,11 @@ const Players = () => {
                 <label className="block text-sm font-medium text-gray-700">Availability</label>
                 <select
                   value={formData.availability}
-                  onChange={e => setFormData({ ...formData, availability: e.target.value as 'available' | 'unavailable' })}
-                  className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  onChange={e => setFormData({ 
+                    ...formData, 
+                    availability: e.target.value as 'available' | 'unavailable' 
+                  })}
+                  className="mt-1 block w-full rounded border-gray-300"
                 >
                   <option value="available">Available</option>
                   <option value="unavailable">Unavailable</option>
@@ -173,42 +334,9 @@ const Players = () => {
         </div>
       )}
 
-      {/* Players List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {players.map(player => (
-          <div key={player.id} className="bg-white p-4 rounded-lg shadow">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold">{player.name}</h3>
-                <p className="text-sm text-gray-600">{player.email}</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <select
-                  value={player.availability.status}
-                  onChange={(e) => handleUpdateAvailability(player.id, e.target.value as 'available' | 'unavailable')}
-                  className={`text-sm rounded px-2 py-1 ${
-                    player.availability.status === 'available' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}
-                >
-                  <option value="available">Available</option>
-                  <option value="unavailable">Unavailable</option>
-                </select>
-              </div>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-              <div className="bg-gray-50 p-2 rounded">
-                <p className="text-gray-600">Games</p>
-                <p className="font-semibold">{player.stats.totalGames}</p>
-              </div>
-              <div className="bg-gray-50 p-2 rounded">
-                <p className="text-gray-600">Win %</p>
-                <p className="font-semibold">{player.stats.winPercentage}%</p>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* Players Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {players.map(player => renderPlayerCard(player))}
       </div>
     </div>
   );
