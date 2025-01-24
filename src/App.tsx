@@ -15,9 +15,9 @@ import Dashboard from './pages/Dashboard'
 import Matches from './pages/Matches'
 import Players from './pages/Players'
 import Stats from './pages/Stats'
+import { ThemeProvider } from './providers/theme'
 
 function App() {
-  // Use separate selectors to avoid unnecessary re-renders
   const setUser = useAuthStore(useCallback(state => state.setUser, []))
   const setInitialized = useAuthStore(useCallback(state => state.setInitialized, []))
   const initialized = useAuthStore(useCallback(state => state.initialized, []))
@@ -36,25 +36,26 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        
-        {/* Protected Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="matches" element={<Matches />} />
-            <Route path="players" element={<Players />} />
-            <Route path="stats" element={<Stats />} />
-          </Route>
-        </Route>
+    <ThemeProvider>
+      <div className="min-h-screen bg-background text-text-primary transition-colors duration-200">
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="matches" element={<Matches />} />
+                <Route path="players" element={<Players />} />
+                <Route path="stats" element={<Stats />} />
+              </Route>
+            </Route>
 
-        {/* Catch all redirect */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </div>
+    </ThemeProvider>
   )
 }
 

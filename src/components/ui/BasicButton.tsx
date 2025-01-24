@@ -33,3 +33,5 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
       </button>
     );
   };
+
+  // all these should be removed
