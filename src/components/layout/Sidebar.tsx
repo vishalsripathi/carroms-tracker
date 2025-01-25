@@ -1,3 +1,4 @@
+// src/components/layout/Sidebar.tsx
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -29,7 +30,7 @@ const Sidebar = ({ collapsed, onCollapse }: SidebarProps) => {
   ];
 
   return (
-    <div className="h-screen bg-card border-r border-border w-64 flex flex-col">
+    <div className="h-full bg-card border-r border-border flex flex-col relative">
       {/* Profile Section */}
       <div className="p-4 border-b border-border">
         <motion.div 

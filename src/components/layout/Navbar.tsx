@@ -8,19 +8,26 @@ import { Avatar } from '../ui/Avatar';
 
 interface NavbarProps {
   children?: React.ReactNode;
+  onMenuClick?: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ children }) => {
+const Navbar: React.FC<NavbarProps> = ({ children, onMenuClick }) => {
   const { user, signOut } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="bg-card shadow-md">
+    <nav className="bg-card shadow-md fixed w-full top-0 z-40">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center">
+            <button
+              onClick={onMenuClick}
+              className="md:hidden p-2 rounded-lg text-muted-foreground"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+            <Link to="/" className="flex items-center ml-2 md:ml-0">
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-foreground bg-clip-text text-transparent">
                 Carrom Tracker
               </span>
