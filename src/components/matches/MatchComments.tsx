@@ -1,9 +1,14 @@
-// components/matches/MatchComments.tsx
+// src/components/matches/MatchComments.tsx
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
 import { matchService } from '../../services/matchService';
-import { BasicAlert } from '../ui/BasicAlert';
-import FormattedDate from '../common/FormattedDate';
+import { Dialog, DialogContent, DialogHeader } from '../ui/Dialog';
+import { Avatar } from '../ui/Avatar';
+import { Button } from '../ui/Button';
+import { formatDistanceToNow } from 'date-fns';
+import { Send, Smile, AlertTriangle, MessageSquare } from 'lucide-react';
+import { Textarea } from '../ui/Textarea/Textarea';
 
 interface Comment {
   id: string;
@@ -17,9 +22,56 @@ interface Comment {
 interface MatchCommentsProps {
   matchId: string;
   onCommentAdded: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const MatchComments: React.FC<MatchCommentsProps> = ({ matchId, onCommentAdded }) => {
+const MessageBubble = ({ comment, isCurrentUser }: { comment: Comment; isCurrentUser: boolean; }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -20 }}
+    className="w-full mb-4"
+  >
+    <div className={`flex gap-3 ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
+      <Avatar size="sm" fallback={comment.userName[0]} className="flex-shrink-0 mt-1" />
+      <div className={`flex flex-col w-full ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+        <div className={`rounded-2xl px-4 py-3 shadow-sm max-w-[85%] ${
+          isCurrentUser 
+            ? 'bg-primary-600 text-primary-50 rounded-tr-none' 
+            : 'bg-gray-50 text-gray-900 dark:bg-gray-800 dark:text-gray-100 rounded-tl-none'
+        }`}>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{comment.text}</p>
+        </div>
+        <div className={`flex items-center gap-2 mt-1 text-xs ${
+          isCurrentUser ? 'flex-row-reverse' : ''
+        }`}>
+          <span className="font-medium text-gray-700 dark:text-gray-300">{comment.userName}</span>
+          <span className="text-gray-500 dark:text-gray-400">
+            {formatDistanceToNow(comment.timestamp, { addSuffix: true })}
+          </span>
+        </div>
+      </div>
+    </div>
+  </motion.div>
+);
+
+const DateDivider = ({ date }: { date: Date }) => (
+  <div className="flex items-center justify-center my-4">
+    <div className="bg-gray-200 dark:bg-gray-700 h-px flex-1" />
+    <span className="px-4 text-xs text-gray-500 dark:text-gray-400">
+      {formatDistanceToNow(date, { addSuffix: true })}
+    </span>
+    <div className="bg-gray-200 dark:bg-gray-700 h-px flex-1" />
+  </div>
+);
+
+const MatchComments: React.FC<MatchCommentsProps> = ({
+  matchId,
+  onCommentAdded,
+  isOpen,
+  onClose
+}) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,6 +87,7 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId, onCommentAdded }
   useEffect(() => {
     const fetchComments = async () => {
       try {
+        setLoading(true);
         const matchDoc = await matchService.getMatch(matchId);
         const matchComments = matchDoc.history
           .filter(event => event.type === 'comment')
@@ -46,17 +99,22 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId, onCommentAdded }
             text: event.data.text || '',
             timestamp: event.timestamp
           }))
-          .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+          .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()) as unknown as Comment[];
+
         setComments(matchComments);
         setTimeout(scrollToBottom, 100);
       } catch (error) {
         console.error('Failed to fetch comments:', error);
         setError('Failed to load comments');
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchComments();
-  }, [matchId]);
+    if (isOpen) {
+      fetchComments();
+    }
+  }, [matchId, isOpen]);
 
   const handleAddComment = async () => {
     if (!user || !newComment.trim()) return;
@@ -69,7 +127,6 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId, onCommentAdded }
         userName: user.displayName || 'Unknown User'
       });
       
-      // Add new comment to local state immediately for better UX
       const newCommentObj = {
         id: new Date().getTime().toString(),
         matchId,
@@ -99,83 +156,98 @@ const MatchComments: React.FC<MatchCommentsProps> = ({ matchId, onCommentAdded }
   };
 
   return (
-    <div className="flex flex-col h-[500px]">
-      {error && <BasicAlert type="error">{error}</BasicAlert>}
+    <Dialog open={isOpen} onClose={onClose}>
+      <DialogHeader>Match Comments</DialogHeader>
       
-      {/* Chat Messages */}
-      <div 
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto mb-4 space-y-4 p-4"
-      >
-        {comments.map(comment => (
-          <div
-            key={comment.id}
-            className={`flex ${comment.userId === user?.uid ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[70%] ${
-                comment.userId === user?.uid
-                  ? 'bg-blue-500 text-white rounded-l-lg rounded-tr-lg'
-                  : 'bg-gray-100 text-gray-800 rounded-r-lg rounded-tl-lg'
-              } p-3 relative`}
-            >
-              {/* Message content */}
-              <p className="text-sm whitespace-pre-wrap break-words">
-                {comment.text}
-              </p>
-              
-              {/* User name and timestamp */}
-              <div 
-                className={`text-xs mt-1 flex items-center gap-2 ${
-                  comment.userId === user?.uid ? 'text-blue-50' : 'text-gray-500'
-                }`}
-              >
-                <span>{comment.userName}</span>
-                <span>•</span>
-                <FormattedDate 
-                  date={comment.timestamp} 
-                  format="time"
-                  className="text-xs"
-                />
-              </div>
+      <DialogContent className="h-[600px] flex flex-col p-0">
+        {error && (
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-800">
+            <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="text-sm">{error}</span>
             </div>
           </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
+        )}
 
-      {/* Input Area */}
-      <div className="border-t p-4 bg-white">
-        <div className="flex gap-2 items-end">
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type a message..."
-            className="flex-1 p-2 border rounded-lg resize-none min-h-[44px] max-h-[120px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            rows={1}
-          />
-          <button
-            onClick={handleAddComment}
-            disabled={loading || !newComment.trim()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed h-[44px] flex items-center justify-center"
-          >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-5 w-5" 
-              viewBox="0 0 20 20" 
-              fill="currentColor"
-            >
-              <path 
-                fillRule="evenodd" 
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" 
-                clipRule="evenodd" 
-              />
-            </svg>
-          </button>
+        {/* Messages List */}
+        <div 
+          ref={chatContainerRef}
+          className="flex-1 overflow-y-auto px-4"
+        >
+          <AnimatePresence>
+            {comments.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400"
+              >
+                <MessageSquare className="h-12 w-12 mb-2 opacity-50" />
+                <p className="text-sm">No comments yet</p>
+                <p className="text-xs">Be the first to start the conversation!</p>
+              </motion.div>
+            ) : (
+              <div className="space-y-6 py-4">
+                {comments.map((comment, index) => {
+                  // Check if we need to show a date divider
+                  const showDivider = index === 0 || (
+                    new Date(comment.timestamp).toDateString() !==
+                    new Date(comments[index - 1].timestamp).toDateString()
+                  );
+
+                  return (
+                    <React.Fragment key={comment.id}>
+                      {showDivider && (
+                        <DateDivider date={comment.timestamp} />
+                      )}
+                      <MessageBubble
+                        comment={comment}
+                        isCurrentUser={comment.userId === user?.uid}
+                      />
+                    </React.Fragment>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
-    </div>
+
+        {/* Input Area */}
+        <div className="border-t dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
+          <div className="flex flex-col gap-2">
+            <Textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your message..."
+              rows={3}
+              className="resize-none"
+              autoExpand
+            />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full"
+                >
+                  <Smile className="h-5 w-5 text-gray-500" />
+                </Button>
+                {/* Add more message options here */}
+              </div>
+              <Button
+                onClick={handleAddComment}
+                disabled={loading || !newComment.trim()}
+                className="min-w-[100px]"
+                leftIcon={<Send className="h-4 w-4" />}
+              >
+                Send
+              </Button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

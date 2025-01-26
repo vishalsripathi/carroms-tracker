@@ -3,6 +3,5 @@ export {
     DialogHeader,
     DialogContent,
     DialogFooter,
-    DialogClose,
     ActionDialog,
   } from './Dialog';

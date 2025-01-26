@@ -1,14 +1,80 @@
+// src/components/matches/TeamGenerator.tsx
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTeamGeneration } from '../../hooks/useTeamGeneration';
 import { Player } from '../../types/player';
-import LoadingSpinner from '../ui/LoadingSpinner';
 import TeamGenerationFeedback from './TeamGenerationFeedback';
+import { Button } from '../ui/Button';
+import { Card, CardContent } from '../ui/Card';
+import { Avatar } from '../ui/Avatar';
+import { 
+  Users, X, RefreshCw, Wand2, 
+  Trophy, UserPlus, Shuffle 
+} from 'lucide-react';
+import LoadingSpinner from '../ui/LoadingSpinner';
 
 interface TeamGeneratorProps {
   availablePlayers: Player[];
   onTeamsGenerated: (teams: [string, string][]) => void;
   onClose: () => void;
 }
+
+const TeamsList = ({ 
+  title, 
+  players, 
+  colorScheme
+}: { 
+  title: string;
+  players: string[];
+  colorScheme: 'blue' | 'green';
+}) => {
+  const colors = {
+    blue: {
+      bg: 'bg-blue-50 dark:bg-blue-900/20',
+      border: 'border-blue-100 dark:border-blue-800',
+      text: 'text-blue-600 dark:text-blue-300',
+      iconBg: 'bg-blue-100 dark:bg-blue-800'
+    },
+    green: {
+      bg: 'bg-green-50 dark:bg-green-900/20',
+      border: 'border-green-100 dark:border-green-800',
+      text: 'text-green-600 dark:text-green-300',
+      iconBg: 'bg-green-100 dark:bg-green-800'
+    }
+  }[colorScheme];
+
+  return (
+    <Card className={`${colors.bg} border ${colors.border}`}>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className={`p-1.5 rounded-full ${colors.iconBg}`}>
+            <Trophy className={`h-4 w-4 ${colors.text}`} />
+          </div>
+          <h4 className={`font-medium ${colors.text}`}>{title}</h4>
+        </div>
+        <div className="space-y-2">
+          {players.map((name, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-gray-800"
+            >
+              <Avatar
+                size="sm"
+                fallback={name[0]}
+              />
+              <span className="text-sm font-medium">
+                {name}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const TeamGenerator: React.FC<TeamGeneratorProps> = ({
   availablePlayers,
@@ -20,15 +86,15 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
     teams: [string, string][];
     teamNames: { team1: string[]; team2: string[] };
   } | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   const handleGenerateTeams = async () => {
     try {
-      // Check if we have enough players
-      if (!availablePlayers || availablePlayers.length < 4) {
+      setIsRegenerating(true);
+      if (availablePlayers.length < 4) {
         throw new Error('Need at least 4 players to generate teams');
       }
 
-      // Filter out players without IDs
       const validPlayers = availablePlayers.filter(player => player && player.id);
       
       if (validPlayers.length < 4) {
@@ -37,56 +103,69 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
 
       const result = await generateTeams(validPlayers);
       if (result) {
+        console.log('Generated teams, result: ' + result)
         setGeneratedTeams(result);
+        // Wait for teams to show and animation to complete
+        await new Promise(resolve => setTimeout(resolve, 800));
         onTeamsGenerated(result.teams);
       }
     } catch (err) {
       console.error('Team generation error:', err);
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-4">
-        <LoadingSpinner />
+      <div className="flex flex-col items-center justify-center p-8 space-y-4">
+        <LoadingSpinner size="large" />
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Generating balanced teams...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Team Generator</h3>
-        <div>
-          <button
-            onClick={handleGenerateTeams}
-            disabled={!availablePlayers || availablePlayers.length < 4}
-            className={`px-4 py-2 rounded ${
-              !availablePlayers || availablePlayers.length < 4
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-blue-500 text-white hover:bg-blue-600"
-            }`}
-          >
-            Generate Teams
-          </button>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-500 hover:text-gray-700"
-            aria-label="Close"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary-50 dark:bg-primary-900/20">
+            <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+          </div>
+          <h3 className="text-lg font-semibold">Team Generator</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          {generatedTeams ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateTeams}
+              disabled={loading || availablePlayers.length < 4}
+              leftIcon={<Shuffle className="h-4 w-4" />}
             >
-              <path
-                fillRule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
+              Regenerate
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={handleGenerateTeams}
+              disabled={loading || availablePlayers.length < 4}
+              leftIcon={<Wand2 className="h-4 w-4" />}
+            >
+              Generate Teams
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="rounded-full"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
       </div>
 
@@ -95,53 +174,74 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
         error={error}
       />
 
-      {error && (
-        <div className="bg-red-100 text-red-700 p-3 rounded">{error}</div>
-      )}
-
-      {/* Available Players Display */}
-      <div className="mt-4">
-        <h4 className="text-sm font-medium text-gray-700 mb-2">
+      {/* Available Players Grid */}
+      <div className="space-y-3">
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          <Users className="h-4 w-4" />
           Available Players ({availablePlayers.length})
         </h4>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
           {availablePlayers.map((player) => (
-            <div key={player.id} className="bg-gray-50 p-2 rounded text-sm">
-              {player.name}
-            </div>
+            <motion.div
+              key={player.id}
+              layout
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800"
+            >
+              <Avatar
+                size="sm"
+                fallback={player.name[0]}
+              />
+              <span className="text-sm font-medium truncate">
+                {player.name}
+              </span>
+            </motion.div>
           ))}
         </div>
       </div>
 
-      {generatedTeams && (
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div className="bg-blue-50 p-4 rounded">
-            <h4 className="font-medium mb-2">Team 1</h4>
-            <ul className="space-y-1">
-              {generatedTeams.teamNames.team1.map((name, index) => (
-                <li key={index} className="text-sm">
-                  {name}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="bg-green-50 p-4 rounded">
-            <h4 className="font-medium mb-2">Team 2</h4>
-            <ul className="space-y-1">
-              {generatedTeams.teamNames.team2.map((name, index) => (
-                <li key={index} className="text-sm">
-                  {name}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
+      {/* Generated Teams */}
+      <AnimatePresence mode="wait">
+        {generatedTeams && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
+            <TeamsList
+              title="Team 1"
+              players={generatedTeams.teamNames.team1}
+              colorScheme="blue"
+            />
+            <TeamsList
+              title="Team 2"
+              players={generatedTeams.teamNames.team2}
+              colorScheme="green"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {availablePlayers.length < 4 && (
-        <p className="text-sm text-gray-600">
-          Need at least 4 available players to generate teams.
-        </p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
+        >
+          <div className="flex items-start gap-2">
+            <UserPlus className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                More Players Needed
+              </p>
+              <p className="text-sm text-amber-600 dark:text-amber-300">
+                Add {4 - availablePlayers.length} more player(s) to start generating teams.
+              </p>
+            </div>
+          </div>
+        </motion.div>
       )}
     </div>
   );

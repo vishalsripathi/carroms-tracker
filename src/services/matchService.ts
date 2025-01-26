@@ -47,34 +47,37 @@ class MatchService {
     newDate: Date,
     userId: string,
     userName: string
-  ): Promise<void> {
+): Promise<void> {
     const matchRef = doc(this.matchesCollection, matchId);
     const matchDoc = await getDoc(matchRef);
     
     if (!matchDoc.exists()) {
-      throw new Error('Match not found');
+        throw new Error('Match not found');
     }
 
-    const matchData = matchDoc.data();
-    const oldDate = matchData.date.toDate();
-
-    const updateEvent = {
-      type: 'reschedule',
-      timestamp: new Date(),
-      userId,
-      userName,
-      data: {
-        oldDate,
-        newDate
-      }
-    };
-
+    // Set the time to noon UTC to avoid timezone issues
+    const normalizedDate = new Date(Date.UTC(
+        newDate.getFullYear(),
+        newDate.getMonth(),
+        newDate.getDate(),
+        12, 0, 0
+    ));
+    
     await updateDoc(matchRef, {
-      date: Timestamp.fromDate(newDate),
-      updatedAt: Timestamp.now(),
-      history: arrayUnion(updateEvent)
+        date: Timestamp.fromDate(normalizedDate),
+        updatedAt: Timestamp.now(),
+        history: arrayUnion({
+            type: 'reschedule',
+            timestamp: Timestamp.now(),
+            userId,
+            userName,
+            data: {
+                oldDate: matchDoc.data().date,
+                newDate: Timestamp.fromDate(normalizedDate)
+            }
+        })
     });
-  }
+}
 
   async deleteMatch(
     matchId: string,
@@ -328,42 +331,34 @@ class MatchService {
     matchRef: DocumentReference,
     scores: MatchScores,
     userId: string
-  ): Promise<void> {
+): Promise<void> {
     const matchDoc = await getDoc(matchRef);
-    
-    if (!matchDoc.exists()) {
-      throw new Error('Match not found');
-    }
+    if (!matchDoc.exists()) throw new Error('Match not found');
 
     const matchData = matchDoc.data();
-    if (matchData.status !== 'completed') {
-      throw new Error('Can only edit completed matches');
-    }
-
     const winner = this.determineWinner(scores.team1Score, scores.team2Score);
+    
     const updateEvent = {
-      type: 'match_edit',
-      timestamp: new Date(),
-      userId,
-      data: {
-        oldScores: {
-          team1: matchData.teams.team1.score,
-          team2: matchData.teams.team2.score
-        },
-        newScores: scores,
-        oldWinner: matchData.winner,
-        newWinner: winner
-      }
+        type: 'score_update',  // Changed from match_edit
+        timestamp: Timestamp.now(),
+        userId,
+        data: {
+            oldScores: {
+                team1: matchData.teams.team1.score,
+                team2: matchData.teams.team2.score
+            },
+            newScores: scores
+        }
     };
 
     await updateDoc(matchRef, {
-      'teams.team1.score': scores.team1Score,
-      'teams.team2.score': scores.team2Score,
-      winner,
-      updatedAt: Timestamp.now(),
-      history: arrayUnion(updateEvent)
+        'teams.team1.score': scores.team1Score,
+        'teams.team2.score': scores.team2Score,
+        winner,
+        updatedAt: Timestamp.now(),
+        history: arrayUnion(updateEvent)
     });
-  }
+}
 
   private async performSubstitution(
     matchRef: DocumentReference,

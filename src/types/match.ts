@@ -4,6 +4,60 @@ export interface Team {
   score: number;
 }
 
+export interface FirebaseTimestamp {
+  getTime: any;
+  seconds: number;
+  nanoseconds: number;
+}
+
+export interface MatchHistoryEvent {
+  userId: string;
+  userName?: string;
+  timestamp: FirebaseTimestamp;
+  type: 
+  | 'creation' 
+  | 'start' 
+  | 'score_update' 
+  | 'substitution' 
+  | 'completion' 
+  | 'status_update' 
+  | 'result_confirmation'
+  | 'edit'
+  | 'reschedule'
+  | 'deletion'
+  | 'comment';
+  data: {
+    // Reschedule data
+    newDate?: FirebaseTimestamp;
+    oldDate?: FirebaseTimestamp;
+    
+    // Status change data
+    newStatus?: string;
+    oldStatus?: string;
+    
+    // Score update data
+    newScores?: {
+      team1Score: number;
+      team2Score: number;
+    };
+    oldScores?: {
+      team1: number;
+      team2: number;
+    };
+    
+    // Match edit data
+    status?: string;
+    finalScores?: {
+      team1Score: number;
+      team2Score: number;
+    };
+    winner?: 'team1' | 'team2';
+    
+    // Comment data
+    text?: string;
+  };
+}
+
 export interface Match {
   id: string;
   date: Date;
@@ -15,7 +69,7 @@ export interface Match {
   winner: 'team1' | 'team2' | null;
   createdAt: Date;
   updatedAt: Date;
-  history: MatchEvent[];
+  history: MatchHistoryEvent[];
   confirmedBy?: string[];
   createdBy: string;
   createdByName: string;
@@ -32,15 +86,6 @@ export interface MatchFormData {
   team2Players: [string, string];
 }
 
-export type MatchEventType = 
-  | 'creation' 
-  | 'start' 
-  | 'score_update' 
-  | 'substitution' 
-  | 'completion' 
-  | 'status_update' 
-  | 'result_confirmation'
-  | 'edit';
 
   export interface MatchEvent {
     type: 
