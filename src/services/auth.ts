@@ -7,7 +7,6 @@ import {
   } from 'firebase/auth';
   import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
   import { auth, db } from './firebase';
-  import type { User } from '../types';
   
   const googleProvider = new GoogleAuthProvider();
   

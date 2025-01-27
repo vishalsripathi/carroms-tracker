@@ -31,7 +31,6 @@ const Layout = () => {
     }
   }, [location, isMobile]);
 
-  const sidebarWidth = sidebarCollapsed ? 64 : 256; // 16 * 4 = 64px, 16 * 16 = 256px
 
   return (
     <div className="min-h-screen bg-background text-foreground">

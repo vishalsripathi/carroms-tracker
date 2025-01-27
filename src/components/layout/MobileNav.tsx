@@ -15,15 +15,6 @@ const MobileNav = () => {
 
   return (
     <>
-      {/* FAB for quick actions */}
-      {/* <motion.button
-        className="fixed right-4 bottom-20 z-50 bg-primary text-primary-foreground p-4 rounded-full shadow-lg"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <Plus className="h-6 w-6" />
-      </motion.button> */}
-
       {/* Bottom Navigation */}
       <motion.div 
         className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40"

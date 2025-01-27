@@ -58,6 +58,30 @@ export interface MatchHistoryEvent {
   };
 }
 
+export interface MatchSummary {
+  matchId: string;
+  score: string;
+  date: Date;
+}
+
+export interface MatchInsights {
+  general: {
+    totalMatches: number;
+    averageScore: number;
+    highestScore: number;
+    closestMatch: MatchSummary;
+    mostDecisive: MatchSummary;
+  };
+  trends: {
+    byDay: Record<string, number>;
+    byTime: Record<string, number>;
+    averageScoresTrend: Array<{
+      date: Date;
+      avgScore: number;
+    }>;
+  };
+}
+
 export interface Match {
   id: string;
   date: Date;

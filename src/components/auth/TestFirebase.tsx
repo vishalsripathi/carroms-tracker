@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { auth } from '../../services/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
 
 export const TestFirebase = () => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState('');
 
   const signInWithGoogle = async () => {

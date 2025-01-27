@@ -1,4 +1,4 @@
-import { Match } from './match';
+import { Match, MatchInsights } from './match';
 import { Player } from './player';
 
 export type TeamSide = 'team1' | 'team2';
@@ -88,32 +88,6 @@ export interface LeaderboardEntry {
   rank: number;
   rankChange: number;
   compositeScore: number;
-}
-
-export interface MatchInsights {
-  general: {
-    totalMatches: number;
-    averageScore: number;
-    highestScore: number;
-    closestMatch: {
-      matchId: string;
-      score: string;
-      date: Date;
-    };
-    mostDecisive: {
-      matchId: string;
-      score: string;
-      date: Date;
-    };
-  };
-  trends: {
-    byDay: Record<string, number>;
-    byTime: Record<string, number>;
-    averageScoresTrend: Array<{
-      date: Date;
-      avgScore: number;
-    }>;
-  };
 }
 
 // Component Props Types

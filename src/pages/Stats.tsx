@@ -328,7 +328,7 @@ const Stats = () => {
 
   const renderLeaderboard = () => (
     <div className="space-y-4">
-      {leaderboard.map((entry, index) => (
+      {leaderboard.map((entry) => (
         <motion.div
           key={entry.player.id}
           variants={itemVariants}

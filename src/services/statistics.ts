@@ -11,7 +11,8 @@ import {
   MatchInsights,
   LeaderboardEntry,
   TeamSide, 
-  MatchResult
+  MatchResult,
+  MatchSummary
 } from '../types';
 
 export class StatisticsService {
@@ -343,91 +344,115 @@ export class StatisticsService {
 
   // Generate insights about all matches
   public generateMatchInsights(matches: Match[]): MatchInsights {
-    const completedMatches = matches.filter(m => m.status === 'completed');
+    const completedMatches = matches.filter((m): m is Match => m.status === 'completed');
     
+    // If there are no completed matches, we return early with default values.
+    if (completedMatches.length === 0) {
+      const defaultMatchSummary: MatchSummary = {
+        matchId: '',
+        score: '0-0',
+        date: new Date(),
+      };
+  
+      return {
+        general: {
+          totalMatches: 0,
+          averageScore: 0,
+          highestScore: 0,
+          closestMatch: defaultMatchSummary,
+          mostDecisive: defaultMatchSummary,
+        },
+        trends: {
+          byDay: {},
+          byTime: {},
+          averageScoresTrend: [],
+        },
+      } satisfies MatchInsights;
+    }
+  
+    // Variables to compute match insights
     let totalScore = 0;
     let highestScore = 0;
     let smallestScoreDiff = Infinity;
     let largestScoreDiff = 0;
     let closestMatch: Match | null = null;
     let mostDecisiveMatch: Match | null = null;
-
+  
     // Track trends
     const dayCount: Record<string, number> = {};
     const timeCount: Record<string, number> = {};
     const scoresByDate = new Map<string, number[]>();
-
-    completedMatches.forEach(match => {
+  
+    completedMatches.forEach((match) => {
       const team1Score = match.teams.team1.score;
       const team2Score = match.teams.team2.score;
       const totalMatchScore = team1Score + team2Score;
       const scoreDiff = Math.abs(team1Score - team2Score);
-
+  
       totalScore += totalMatchScore;
-      highestScore = Math.max(highestScore, Math.max(team1Score, team2Score));
-
+      highestScore = Math.max(highestScore, team1Score, team2Score);
+  
+      // Determine the closest match
       if (scoreDiff < smallestScoreDiff) {
         smallestScoreDiff = scoreDiff;
-        closestMatch = match;
+        closestMatch = match; // Set closest match
       }
-
+  
+      // Determine the most decisive match
       if (scoreDiff > largestScoreDiff) {
         largestScoreDiff = scoreDiff;
-        mostDecisiveMatch = match;
+        mostDecisiveMatch = match; // Set most decisive match
       }
-
+  
       // Track day and time trends
       const day = match.date.toLocaleDateString('en-US', { weekday: 'long' });
       const hour = match.date.getHours();
       const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
-
+  
       dayCount[day] = (dayCount[day] || 0) + 1;
       timeCount[timeSlot] = (timeCount[timeSlot] || 0) + 1;
-
+  
       // Track scores by date for trend analysis
       const dateKey = match.date.toISOString().split('T')[0];
       const currentScores = scoresByDate.get(dateKey) || [];
       currentScores.push(totalMatchScore);
       scoresByDate.set(dateKey, currentScores);
     });
-
+  
     // Calculate average scores trend
     const averageScoresTrend = Array.from(scoresByDate.entries())
       .map(([date, scores]) => ({
         date: new Date(date),
-        avgScore: scores.reduce((a, b) => a + b, 0) / scores.length
+        avgScore: scores.reduce((a, b) => a + b, 0) / scores.length,
       }))
       .sort((a, b) => a.date.getTime() - b.date.getTime());
-
-    return {
-      general: {
-        totalMatches: completedMatches.length,
-        averageScore: completedMatches.length > 0 ? totalScore / (completedMatches.length * 2) : 0,
-        highestScore,
-        closestMatch: closestMatch ? {
-          matchId: closestMatch.id,
-          score: `${closestMatch.teams.team1.score}-${closestMatch.teams.team2.score}`,
-          date: closestMatch.date
-        } : {
-          matchId: '',
-          score: '0-0',
-          date: new Date()
-        },
-        mostDecisive: mostDecisiveMatch ? {
-          matchId: mostDecisiveMatch.id,
-          score: `${mostDecisiveMatch.teams.team1.score}-${mostDecisiveMatch.teams.team2.score}`,
-          date: mostDecisiveMatch.date
-        } : {
-          matchId: '',
-          score: '0-0',
-          date: new Date()
-        }
+  
+    // By now, closestMatch and mostDecisiveMatch are guaranteed to be non-null
+    const general = {
+      totalMatches: completedMatches.length,
+      averageScore: totalScore / (completedMatches.length * 2),
+      highestScore,
+      closestMatch: {
+        matchId: closestMatch!.id, // Non-null assertion since we checked completedMatches.length > 0
+        score: `${closestMatch!.teams.team1.score}-${closestMatch!.teams.team2.score}`,
+        date: closestMatch!.date,
       },
-      trends: {
-        byDay: dayCount,
-        byTime: timeCount,
-        averageScoresTrend
-      }
+      mostDecisive: {
+        matchId: mostDecisiveMatch!.id, // Non-null assertion for the same reason
+        score: `${mostDecisiveMatch!.teams.team1.score}-${mostDecisiveMatch!.teams.team2.score}`,
+        date: mostDecisiveMatch!.date,
+      },
     };
+  
+    const trends = {
+      byDay: dayCount,
+      byTime: timeCount,
+      averageScoresTrend,
+    };
+  
+    return {
+      general,
+      trends,
+    } satisfies MatchInsights;
   }
 }

@@ -6,28 +6,48 @@ import {
     setDoc, 
     updateDoc, 
     query, 
-    where, 
     orderBy,
     limit,
-    Timestamp 
+    Timestamp, 
+    Query,
+    DocumentData
   } from 'firebase/firestore';
   import { db } from './firebase';
   import type { User, Match } from '../types';
+
+  type ServiceResponse<T> = {
+    success: boolean;
+    data?: T;
+    error?: string;
+  };
   
   // User operations
-  export const getUser = async (userId: string): Promise<User | null> => {
+  export const getUser = async (userId: string): Promise<ServiceResponse<User>> => {
     try {
       const userDoc = await getDoc(doc(db, 'users', userId));
-      if (!userDoc.exists()) return null;
-      return userDoc.data() as User;
+      if (!userDoc.exists()) {
+        return {
+          success: false,
+          error: 'User not found'
+        };
+      }
+      return {
+        success: true,
+        data: { id: userDoc.id, ...userDoc.data() } as User
+      };
     } catch (error) {
       console.error('Error fetching user:', error);
-      throw error;
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
     }
   };
   
   // Match operations
-  export const createMatch = async (matchData: Omit<Match, 'id' | 'createdAt' | 'updatedAt'>) => {
+  export const createMatch = async (
+    matchData: Omit<Match, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<ServiceResponse<Match>> => {
     try {
       const matchesRef = collection(db, 'matches');
       const newMatchRef = doc(matchesRef);
@@ -40,27 +60,44 @@ import {
       };
   
       await setDoc(newMatchRef, match);
-      return match;
+      return {
+        success: true,
+        data: match
+      };
     } catch (error) {
       console.error('Error creating match:', error);
-      throw error;
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
     }
   };
   
-  export const getRecentMatches = async (limit = 10) => {
+  export const getRecentMatches = async (limitCount = 10) => {
     try {
       const matchesRef = collection(db, 'matches');
       const q = query(
         matchesRef,
         orderBy('date', 'desc'),
-        limit
-      );
+        limit(limitCount)
+      ) as Query<DocumentData>;
       
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => doc.data() as Match);
+      const matches = querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as Match[];
+  
+      return {
+        success: true,
+        data: matches
+      };
     } catch (error) {
       console.error('Error fetching recent matches:', error);
-      throw error;
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
     }
   };
   
@@ -69,7 +106,7 @@ import {
     matchId: string, 
     team1Score: number, 
     team2Score: number
-  ) => {
+  ): Promise<ServiceResponse<void>> => {
     try {
       const matchRef = doc(db, 'matches', matchId);
       const winner = team1Score > team2Score ? 'team1' : 
@@ -82,8 +119,15 @@ import {
         status: 'completed',
         updatedAt: Timestamp.now()
       });
+  
+      return {
+        success: true
+      };
     } catch (error) {
       console.error('Error updating match result:', error);
-      throw error;
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
     }
   };

@@ -1,5 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { Avatar } from '../ui/Avatar';
 import { useState } from "react";
 
 // src/components/matches/MessageBubble.tsx

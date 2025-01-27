@@ -8,7 +8,7 @@ import { Button } from '../ui/Button';
 import { Card, CardContent } from '../ui/Card';
 import { Avatar } from '../ui/Avatar';
 import { 
-  Users, X, RefreshCw, Wand2, 
+  Users, X, Wand2, 
   Trophy, UserPlus, Shuffle 
 } from 'lucide-react';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -86,11 +86,11 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
     teams: [string, string][];
     teamNames: { team1: string[]; team2: string[] };
   } | null>(null);
-  const [isRegenerating, setIsRegenerating] = useState(false);
+  // const [isRegenerating, setIsRegenerating] = useState(false);
 
   const handleGenerateTeams = async () => {
     try {
-      setIsRegenerating(true);
+      // setIsRegenerating(true);
       if (availablePlayers.length < 4) {
         throw new Error('Need at least 4 players to generate teams');
       }
@@ -112,7 +112,7 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
     } catch (err) {
       console.error('Team generation error:', err);
     } finally {
-      setIsRegenerating(false);
+      // setIsRegenerating(false);
     }
   };
 
