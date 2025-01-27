@@ -1,7 +1,61 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import { Card, CardContent } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Avatar } from '../ui/Avatar';
 import { PlayerStatsCardProps, MatchResult } from '../../types';
 import { formatDate } from '../../utils/dateUtils';
+import {
+  Trophy,
+  Target,
+  Activity,
+  Calendar,
+  Medal
+} from 'lucide-react';
+import { Tabs } from '../ui/Tabs';
+
+const tabVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  },
+  exit: { opacity: 0, y: -20 }
+};
+
+const FormGuide = ({ formGuide }: { formGuide: MatchResult[] }) => (
+  <div className="bg-muted/50 p-4 rounded-lg">
+    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+      <Activity className="h-4 w-4 text-primary" />
+      Recent Form
+    </h4>
+    <div className="flex gap-2">
+      <AnimatePresence mode="popLayout">
+        {formGuide.map((result, index) => (
+          <motion.div
+            key={index}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${
+              result === 'W'
+                ? 'bg-green-500/10 text-green-700 dark:text-green-300'
+                : 'bg-red-500/10 text-red-700 dark:text-red-300'
+            }`}
+          >
+            {result}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  </div>
+);
 
 const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({
   playerName,
@@ -9,26 +63,6 @@ const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({
   getPlayerName
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'partnerships' | 'timeline'>('overview');
-
-  const renderFormGuide = (formGuide: MatchResult[]) => (
-    <div className="bg-gray-50 p-4 rounded-lg">
-      <h4 className="text-sm font-medium text-gray-700 mb-2">Recent Form</h4>
-      <div className="flex space-x-2">
-        {formGuide.map((result, index) => (
-          <div
-            key={index}
-            className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${
-              result === 'W'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
-            }`}
-          >
-            {result}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 
   const renderOverview = () => {
     const radarData = [{
@@ -40,56 +74,92 @@ const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({
     }];
 
     return (
-      <div className="space-y-6">
+      <motion.div variants={tabVariants} className="space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">Win Rate</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {stats.basic.winRate.toFixed(1)}%
-            </p>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">Total Games</p>
-            <p className="text-2xl font-bold text-green-600">
-              {stats.basic.totalGames}
-            </p>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">Current Streak</p>
-            <p className="text-2xl font-bold text-purple-600">
-              {Math.abs(stats.basic.currentStreak)}
-              <span className="text-sm ml-1">
-                {stats.basic.currentStreak > 0 ? 'W' : 'L'}
-              </span>
-            </p>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">Avg Score</p>
-            <p className="text-2xl font-bold text-yellow-600">
-              {stats.basic.avgScore.toFixed(1)}
-            </p>
-          </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy className="h-4 w-4 text-primary" />
+                <p className="text-sm text-muted-foreground">Win Rate</p>
+              </div>
+              <p className="text-2xl font-bold">
+                {stats.basic.winRate.toFixed(1)}%
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {stats.basic.wins}W - {stats.basic.losses}L
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="h-4 w-4 text-primary" />
+                <p className="text-sm text-muted-foreground">Total Games</p>
+              </div>
+              <p className="text-2xl font-bold">
+                {stats.basic.totalGames}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Medal className="h-4 w-4 text-primary" />
+                <p className="text-sm text-muted-foreground">Streak</p>
+              </div>
+              <p className="text-2xl font-bold">
+                {Math.abs(stats.basic.currentStreak)}
+                <Badge 
+                  variant={stats.basic.currentStreak > 0 ? "success" : "danger"}
+                  className="ml-2"
+                >
+                  {stats.basic.currentStreak > 0 ? 'W' : 'L'}
+                </Badge>
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="h-4 w-4 text-primary" />
+                <p className="text-sm text-muted-foreground">Avg Score</p>
+              </div>
+              <p className="text-2xl font-bold">
+                {stats.basic.avgScore.toFixed(1)}
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        {renderFormGuide(stats.advanced.formGuide)}
+        <FormGuide formGuide={stats.advanced.formGuide} />
 
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={radarData}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="name" />
-              <PolarRadiusAxis angle={30} domain={[0, 100]} />
-              <Radar
-                name="Player Stats"
-                dataKey="value"
-                stroke="#4F46E5"
-                fill="#4F46E5"
-                fillOpacity={0.6}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+        <Card>
+          <CardContent className="p-4">
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={radarData}>
+                  <PolarGrid className="stroke-muted" />
+                  <PolarAngleAxis 
+                    dataKey="name" 
+                    className="text-muted-foreground text-xs"
+                  />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                  <Radar
+                    name="Player Stats"
+                    dataKey="value"
+                    stroke="hsl(var(--primary))"
+                    fill="hsl(var(--primary))"
+                    fillOpacity={0.3}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     );
   };
 
@@ -108,89 +178,100 @@ const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({
     }));
 
     return (
-      <div className="space-y-6">
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={performanceData}>
-              <XAxis dataKey="name" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip />
-              <Bar dataKey="value" fill="#4F46E5" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={matchHistoryData}>
-              <XAxis dataKey="date" />
-              <YAxis domain={[0, 'dataMax + 5']} />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="score"
-                stroke="#4F46E5"
-                dot={{
-                  fill: '#4F46E5',
-                  stroke: 'white',
-                  strokeWidth: 2,
-                  r: 4
-                }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Score Distribution</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">As Team 1</p>
-              <p className="text-xl font-semibold">
-                {stats.advanced.avgScoreAsTeam1.toFixed(1)}
-              </p>
+      <motion.div variants={tabVariants} className="space-y-6">
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Performance Metrics</h3>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={performanceData}>
+                  <XAxis dataKey="name" className="text-muted-foreground text-xs" />
+                  <YAxis domain={[0, 100]} className="text-muted-foreground text-xs" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">As Team 2</p>
-              <p className="text-xl font-semibold">
-                {stats.advanced.avgScoreAsTeam2.toFixed(1)}
-              </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Score History</h3>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={matchHistoryData}>
+                  <XAxis dataKey="date" className="text-muted-foreground text-xs" />
+                  <YAxis domain={[0, 'dataMax + 5']} className="text-muted-foreground text-xs" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    dot={{
+                      r: 4,
+                      fill: 'hsl(var(--primary))',
+                      stroke: 'hsl(var(--background))',
+                      strokeWidth: 2
+                    }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-          </div>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     );
   };
 
   const renderPartnerships = () => (
-    <div className="space-y-4">
-      <h4 className="text-lg font-semibold">Preferred Partners</h4>
+    <motion.div variants={tabVariants} className="space-y-4">
       <div className="grid gap-4">
         {stats.advanced.preferredPartners.map((partner) => (
-          <div
-            key={partner.partnerId}
-            className="bg-gray-50 p-4 rounded-lg flex justify-between items-center"
-          >
-            <div>
-              <p className="font-medium">{getPlayerName(partner.partnerId)}</p>
-              <p className="text-sm text-gray-600">
-                {partner.gamesPlayed} games together
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-semibold text-blue-600">
-                {partner.winRate.toFixed(1)}%
-              </p>
-              <p className="text-sm text-gray-600">Win Rate</p>
-            </div>
-          </div>
+          <Card key={partner.partnerId}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Avatar
+                    fallback={getPlayerName(partner.partnerId)[0]}
+                    className="h-10 w-10"
+                  />
+                  <div>
+                    <p className="font-medium">{getPlayerName(partner.partnerId)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {partner.gamesPlayed} games together
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-primary">
+                    {partner.winRate.toFixed(1)}%
+                  </p>
+                  <p className="text-sm text-muted-foreground">Win Rate</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 
   const renderTimeline = () => (
-    <div className="space-y-4">
+    <motion.div variants={tabVariants} className="space-y-4">
       <div className="flow-root">
         <ul className="-mb-8">
           {stats.timeline.map((event, index) => (
@@ -198,35 +279,29 @@ const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({
               <div className="relative pb-8">
                 {index < stats.timeline.length - 1 && (
                   <span
-                    className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
+                    className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-border"
                     aria-hidden="true"
                   />
                 )}
-                <div className="relative flex space-x-3">
+                <div className="relative flex gap-3">
                   <div>
-                    <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
+                    <span className={`h-8 w-8 rounded-full flex items-center justify-center ${
                       event.type === 'match' 
-                        ? event.detail.startsWith('Won') 
-                          ? 'bg-green-500' 
-                          : 'bg-red-500'
-                        : event.type === 'streak'
-                        ? 'bg-blue-500'
-                        : 'bg-purple-500'
+                        ? event.detail.startsWith('Won')
+                          ? 'bg-green-500/10 text-green-700 dark:text-green-300'
+                          : 'bg-red-500/10 text-red-700 dark:text-red-300'
+                        : 'bg-primary/10 text-primary'
                     }`}>
-                      <span className="text-white text-sm font-medium">
-                        {event.type === 'match' 
-                          ? event.detail.startsWith('Won') ? 'W' : 'L'
-                          : event.type === 'streak' ? 'S' : 'M'}
-                      </span>
+                      {event.type === 'match' 
+                        ? event.detail.startsWith('Won') ? 'W' : 'L'
+                        : event.type === 'streak' ? 'S' : 'M'}
                     </span>
                   </div>
-                  <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                    <div>
-                      <p className="text-sm text-gray-500">{event.detail}</p>
-                    </div>
-                    <div className="whitespace-nowrap text-right text-sm text-gray-500">
+                  <div className="flex justify-between items-center w-full">
+                    <p className="text-sm text-muted-foreground">{event.detail}</p>
+                    <time className="text-sm text-muted-foreground">
                       {formatDate(event.date, 'date')}
-                    </div>
+                    </time>
                   </div>
                 </div>
               </div>
@@ -234,35 +309,54 @@ const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({
           ))}
         </ul>
       </div>
-    </div>
+    </motion.div>
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold text-gray-800">{playerName}</h3>
-        <div className="flex space-x-2">
-          {(['overview', 'performance', 'partnerships', 'timeline'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                activeTab === tab
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
+    <Card>
+      <CardContent className="p-6 space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Avatar fallback={playerName[0]} className="h-12 w-12" />
+            <h3 className="text-2xl font-bold">{playerName}</h3>
+          </div>
+          <Tabs
+            tabs={[
+              { id: "overview", label: "Overview", content: renderOverview() },
+              {
+                id: "performance",
+                label: "Performance",
+                content: renderPerformance(),
+              },
+              {
+                id: "partnerships",
+                label: "Partnerships",
+                content: renderPartnerships(),
+              },
+              { id: "timeline", label: "Timeline", content: renderTimeline() },
+            ]}
+            defaultTab={activeTab}
+            onChange={(tabId) => setActiveTab(tabId as typeof activeTab)}
+            className="w-full md:w-auto"
+          />
         </div>
-      </div>
 
-      {activeTab === 'overview' && renderOverview()}
-      {activeTab === 'performance' && renderPerformance()}
-      {activeTab === 'partnerships' && renderPartnerships()}
-      {activeTab === 'timeline' && renderTimeline()}
-    </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={tabVariants}
+          >
+            {activeTab === "overview" && renderOverview()}
+            {activeTab === "performance" && renderPerformance()}
+            {activeTab === "partnerships" && renderPartnerships()}
+            {activeTab === "timeline" && renderTimeline()}
+          </motion.div>
+        </AnimatePresence>
+      </CardContent>
+    </Card>
   );
 };
 

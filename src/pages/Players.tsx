@@ -1,10 +1,42 @@
 import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { collection, getDocs, addDoc, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { Player, PlayerFormData } from '../types/player';
 import { Match } from '../types/match';
 import { StatisticsService } from '../services/statistics';
+import { Card, CardContent } from '../components/ui/Card';
+import { Dialog, DialogContent, DialogFooter, DialogHeader } from '../components/ui/Dialog';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input/Input';
+import { Select } from '../components/ui/Select/Select';
+import { Avatar } from '../components/ui/Avatar';
+import { Badge } from '../components/ui/Badge';
+import { UserPlus, Trophy, Users, ChartLine, Star } from 'lucide-react';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+};
 
 const Players = () => {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -20,7 +52,6 @@ const Players = () => {
 
   const statisticsService = useMemo(() => new StatisticsService(), []);
 
-  // Fetch players and matches
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -56,7 +87,6 @@ const Players = () => {
     fetchData();
   }, []);
 
-  // Calculate player statistics
   const playerStats = useMemo(() => {
     return players.map(player => ({
       player,
@@ -64,7 +94,6 @@ const Players = () => {
     }));
   }, [players, matches, statisticsService]);
 
-  // Add new player
   const handleAddPlayer = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -103,7 +132,6 @@ const Players = () => {
       const statePlayer: Player = {
         ...firestorePlayer,
         id: docRef.id,
-        // Remove lastPlayed entirely for new players (it will be undefined)
         availability: {
           ...firestorePlayer.availability,
           lastUpdated: timestamp.toDate()
@@ -122,7 +150,6 @@ const Players = () => {
     }
   };
 
-  // Update player availability
   const handleUpdateAvailability = async (playerId: string, status: 'available' | 'unavailable') => {
     try {
       await updateDoc(doc(db, 'players', playerId), {
@@ -155,100 +182,130 @@ const Players = () => {
     const formGuide = stats.advanced.formGuide;
 
     return (
-      <div key={player.id} className="bg-white p-6 rounded-lg shadow space-y-4">
-        {/* Player Header */}
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-lg font-semibold">{player.name}</h3>
-            <p className="text-sm text-gray-600">{player.email}</p>
-          </div>
-          <select
-            value={player.availability.status}
-            onChange={(e) => handleUpdateAvailability(player.id, e.target.value as 'available' | 'unavailable')}
-            className={`text-sm rounded px-3 py-1 ${
-              player.availability.status === 'available' 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}
-          >
-            <option value="available">Available</option>
-            <option value="unavailable">Unavailable</option>
-          </select>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-gray-50 p-4 rounded">
-            <p className="text-sm text-gray-600">Win Rate</p>
-            <p className="text-xl font-semibold">
-              {stats.basic.winRate.toFixed(1)}%
-            </p>
-            <p className="text-sm text-gray-500">
-              {stats.basic.wins}W - {stats.basic.losses}L
-            </p>
-          </div>
-          <div className="bg-gray-50 p-4 rounded">
-            <p className="text-sm text-gray-600">Average Score</p>
-            <p className="text-xl font-semibold">
-              {stats.basic.avgScore.toFixed(1)}
-            </p>
-          </div>
-        </div>
-
-        {/* Form Guide */}
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">Recent Form</p>
-          <div className="flex space-x-2">
-            {formGuide.map((result, idx) => (
-              <div
-                key={idx}
-                className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${
-                  result === 'W'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
-                }`}
-              >
-                {result}
+      <motion.div variants={itemVariants}>
+        <Card className="h-full">
+          <CardContent className="p-6 space-y-6">
+            {/* Player Header */}
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                <Avatar
+                  fallback={player.name[0]}
+                  className="h-12 w-12"
+                />
+                <div>
+                  <h3 className="text-lg font-semibold">{player.name}</h3>
+                  <p className="text-sm text-muted-foreground">{player.email}</p>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+              <Select
+                value={player.availability.status}
+                onChange={(value) => handleUpdateAvailability(player.id, value as 'available' | 'unavailable')}
+                options={[
+                  { value: 'available', label: 'Available' },
+                  { value: 'unavailable', label: 'Unavailable' }
+                ]}
+                className={`w-32 ${
+                  player.availability.status === 'available' 
+                    ? 'text-green-600 dark:text-green-400' 
+                    : 'text-red-600 dark:text-red-400'
+                }`}
+              />
+            </div>
 
-        {/* Performance Metrics */}
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">Performance</p>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Last 5 Games</p>
-              <p className="font-medium">
-                {stats.advanced.performance.last5Games.toFixed(1)}%
-              </p>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy className="h-4 w-4 text-primary" />
+                  <p className="text-sm text-muted-foreground">Win Rate</p>
+                </div>
+                <p className="text-2xl font-bold">
+                  {stats.basic.winRate.toFixed(1)}%
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {stats.basic.wins}W - {stats.basic.losses}L
+                </p>
+              </div>
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <ChartLine className="h-4 w-4 text-primary" />
+                  <p className="text-sm text-muted-foreground">Avg Score</p>
+                </div>
+                <p className="text-2xl font-bold">
+                  {stats.basic.avgScore.toFixed(1)}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">This Month</p>
-              <p className="font-medium">
-                {stats.advanced.performance.thisMonth.toFixed(1)}%
-              </p>
-            </div>
-          </div>
-        </div>
 
-        {/* Preferred Partners */}
-        {stats.advanced.preferredPartners.length > 0 && (
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Best Partner</p>
-            <div className="bg-gray-50 p-3 rounded">
-              <p className="font-medium">
-                {players.find(p => p.id === stats.advanced.preferredPartners[0].partnerId)?.name}
-              </p>
-              <p className="text-sm text-gray-600">
-                {stats.advanced.preferredPartners[0].winRate.toFixed(1)}% Win Rate
-                ({stats.advanced.preferredPartners[0].gamesPlayed} games)
-              </p>
+            {/* Form Guide */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Star className="h-4 w-4 text-primary" />
+                <p className="text-sm font-medium">Recent Form</p>
+              </div>
+              <div className="flex gap-2">
+                <AnimatePresence mode="popLayout">
+                  {formGuide.map((result, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${
+                        result === 'W'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      }`}
+                    >
+                      {result}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+
+            {/* Performance Metrics */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Last 5 Games</p>
+                <p className="text-lg font-semibold">
+                  {stats.advanced.performance.last5Games.toFixed(1)}%
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">This Month</p>
+                <p className="text-lg font-semibold">
+                  {stats.advanced.performance.thisMonth.toFixed(1)}%
+                </p>
+              </div>
+            </div>
+
+            {/* Best Partner */}
+            {stats.advanced.preferredPartners.length > 0 && (
+              <div className="pt-2 border-t border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-medium">Best Partner</p>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Avatar
+                      fallback={players.find(p => p.id === stats.advanced.preferredPartners[0].partnerId)?.name[0]}
+                      size="sm"
+                    />
+                    <span className="font-medium">
+                      {players.find(p => p.id === stats.advanced.preferredPartners[0].partnerId)?.name}
+                    </span>
+                  </div>
+                  <Badge variant="primary">
+                    {stats.advanced.preferredPartners[0].winRate.toFixed(1)}% WR
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
     );
   };
 
@@ -257,88 +314,82 @@ const Players = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Players</h1>
-        <button
+        <Button
           onClick={() => setShowAddForm(true)}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          leftIcon={<UserPlus className="h-4 w-4" />}
         >
           Add Player
-        </button>
+        </Button>
       </div>
 
       {error && (
-        <div className="bg-red-100 text-red-700 p-3 rounded">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg"
+        >
           {error}
-        </div>
+        </motion.div>
       )}
 
-      {/* Add Player Form */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add New Player</h2>
-            <form onSubmit={handleAddPlayer} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1 block w-full rounded border-gray-300"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={e => setFormData({ ...formData, email: e.target.value })}
-                  className="mt-1 block w-full rounded border-gray-300"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Availability</label>
-                <select
-                  value={formData.availability}
-                  onChange={e => setFormData({ 
-                    ...formData, 
-                    availability: e.target.value as 'available' | 'unavailable' 
-                  })}
-                  className="mt-1 block w-full rounded border-gray-300"
-                >
-                  <option value="available">Available</option>
-                  <option value="unavailable">Unavailable</option>
-                </select>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Add Player
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Add Player Dialog */}
+      <Dialog 
+        open={showAddForm} 
+        onClose={()  => setShowAddForm(false)}
+      >
+        <DialogHeader>Add New Player</DialogHeader>
+        <DialogContent>
+          <form onSubmit={handleAddPlayer} className="space-y-4">
+            <Input
+              label="Name"
+              value={formData.name}
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={formData.email}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+            <Select
+              label="Availability"
+              value={formData.availability}
+              onChange={(value) => setFormData({ 
+                ...formData, 
+                availability: value as 'available' | 'unavailable' 
+              })}
+              options={[
+                { value: 'available', label: 'Available' },
+                { value: 'unavailable', label: 'Unavailable' }
+              ]}
+            />
+          </form>
+        </DialogContent>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowAddForm(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleAddPlayer}>
+            Add Player
+          </Button>
+        </DialogFooter>
+      </Dialog>
 
       {/* Players Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {players.map(player => renderPlayerCard(player))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

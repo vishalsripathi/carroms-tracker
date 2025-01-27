@@ -1,13 +1,95 @@
 import { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
-import PlayerStatsCard from '../components/stats/PlayerStatsCard';
 import { StatisticsService } from '../services/statistics';
 import { Match } from '../types/match';
 import { Player } from '../types/player';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Card, CardContent } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import PlayerStatsCard from '../components/stats/PlayerStatsCard';
 import { formatDate } from '../utils/dateUtils';
+import {
+  Trophy,
+  Calendar,
+  Target,
+  Users,
+  TrendingUp,
+  Activity,
+  Medal,
+  Crown
+} from 'lucide-react';
+
+// Chart Components
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts';
+import { Select } from '../components/ui/Select/Select';
+import { Tabs } from '../components/ui/Tabs';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+};
+
+interface StatsCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  trend?: number;
+}
+
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, trend = 0 }) => (
+  <motion.div variants={itemVariants}>
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold">{value}</p>
+          </div>
+          <div className="p-3 bg-primary/10 rounded-full">
+            <Icon className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+        {trend !== 0 && (
+          <div className="mt-2">
+            <Badge variant={trend > 0 ? "success" : "danger"}>
+              {trend > 0 ? "+" : ""}{trend}%
+            </Badge>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  </motion.div>
+);
 
 const Stats = () => {
   const [loading, setLoading] = useState(true);
@@ -90,111 +172,190 @@ const Stats = () => {
     }));
 
     return (
-      <div className="space-y-6">
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6"
+      >
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-700">Total Matches</h3>
-            <p className="text-3xl font-bold text-blue-600">{general.totalMatches}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-700">Average Score</h3>
-            <p className="text-3xl font-bold text-green-600">
-              {general.averageScore.toFixed(1)}
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-700">Highest Score</h3>
-            <p className="text-3xl font-bold text-purple-600">{general.highestScore}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-700">Active Players</h3>
-            <p className="text-3xl font-bold text-yellow-600">{players.length}</p>
-          </div>
+          <StatsCard
+            title="Total Matches"
+            value={general.totalMatches}
+            icon={Calendar}
+          />
+          <StatsCard
+            title="Average Score"
+            value={general.averageScore.toFixed(1)}
+            icon={Target}
+            trend={5}
+          />
+          <StatsCard
+            title="Highest Score"
+            value={general.highestScore}
+            icon={Crown}
+          />
+          <StatsCard
+            title="Active Players"
+            value={players.length}
+            icon={Users}
+          />
         </div>
 
-        {/* Match Distribution Chart */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Matches by Day</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={matchTrends}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="matches" fill="#4F46E5" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Match Distribution Chart */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-semibold">Matches by Day</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Distribution of matches across weekdays
+                  </p>
+                </div>
+                <Activity className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={matchTrends}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="day"
+                      className="text-muted-foreground text-xs"
+                    />
+                    <YAxis className="text-muted-foreground text-xs" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="matches" 
+                      fill="hsl(var(--primary))"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Score Trends */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Score Trends</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={scoreTrends}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="score" 
-                  stroke="#4F46E5"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {/* Score Trends */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-semibold">Score Trends</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Average score progression over time
+                  </p>
+                </div>
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={scoreTrends}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="date"
+                      className="text-muted-foreground text-xs"
+                    />
+                    <YAxis className="text-muted-foreground text-xs" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={{
+                        r: 4,
+                        fill: 'hsl(var(--primary))',
+                        strokeWidth: 2,
+                        stroke: 'hsl(var(--background))'
+                      }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Notable Matches */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">Closest Match</h3>
-            <p className="text-2xl font-bold text-blue-600">{general.closestMatch.score}</p>
-            <p className="text-sm text-gray-600">
-              {formatDate(general.closestMatch.date, 'full')}
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">Most Decisive</h3>
-            <p className="text-2xl font-bold text-blue-600">{general.mostDecisive.score}</p>
-            <p className="text-sm text-gray-600">
-              {formatDate(general.mostDecisive.date, 'full')}
-            </p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Medal className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold">Closest Match</h3>
+              </div>
+              <p className="text-3xl font-bold text-primary">
+                {general.closestMatch.score}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {formatDate(general.closestMatch.date, 'full')}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Trophy className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold">Most Decisive</h3>
+              </div>
+              <p className="text-3xl font-bold text-primary">
+                {general.mostDecisive.score}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {formatDate(general.mostDecisive.date, 'full')}
+              </p>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </motion.div>
     );
   };
 
   const renderLeaderboard = () => (
     <div className="space-y-4">
-      {leaderboard.map((entry) => (
-        <div
+      {leaderboard.map((entry, index) => (
+        <motion.div
           key={entry.player.id}
-          className="bg-white p-4 rounded-lg shadow flex items-center"
+          variants={itemVariants}
+          className="relative"
         >
-          <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-            <span className="text-xl font-bold text-blue-600">#{entry.rank}</span>
-          </div>
-          <div className="ml-4 flex-grow">
-            <h3 className="font-semibold">{entry.player.name}</h3>
-            <div className="text-sm text-gray-600">
-              {entry.stats.basic.wins} wins, {entry.stats.basic.losses} losses
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-blue-600">
-              {entry.stats.basic.winRate.toFixed(1)}%
-            </div>
-            <div className="text-sm text-gray-600">Win Rate</div>
-          </div>
-        </div>
+          <Card className="overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <span className="text-xl font-bold text-primary">#{entry.rank}</span>
+                </div>
+                <div className="flex-grow min-w-0">
+                  <h3 className="font-semibold truncate">{entry.player.name}</h3>
+                  <div className="text-sm text-muted-foreground">
+                    {entry.stats.basic.wins}W - {entry.stats.basic.losses}L
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-primary">
+                    {entry.stats.basic.winRate.toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">Win Rate</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       ))}
     </div>
   );
@@ -204,26 +365,19 @@ const Stats = () => {
 
     const playerStats = statisticsService.calculatePlayerStats(selectedPlayer, matches);
     const selectedPlayerData = players.find(p => p.id === selectedPlayer);
-    console.log('Stats being passed to PlayerStatsCard:', playerStats);
 
     if (!selectedPlayerData) return null;
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <select
-            value={selectedPlayer}
-            onChange={(e) => setSelectedPlayer(e.target.value)}
-            className="rounded border-gray-300 py-2"
-          >
-            {players.map(player => (
-              <option key={player.id} value={player.id}>
-                {player.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        
+        <Select
+          value={selectedPlayer}
+          onChange={setSelectedPlayer}
+          options={players.map(player => ({
+            label: player.name,
+            value: player.id
+          }))}
+        />
         <PlayerStatsCard
           playerName={selectedPlayerData.name}
           stats={playerStats}
@@ -249,196 +403,181 @@ const Stats = () => {
       .sort((a, b) => b.analytics.chemistry - a.analytics.chemistry);
 
     return (
-      <div className="space-y-6">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6"
+      >
         {teamAnalytics.map(({ team, analytics }) => (
-          <div key={team.join('-')} className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold">
-                  {getPlayerName(team[0])} & {getPlayerName(team[1])}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {analytics.partnership.gamesPlayed} games together
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-blue-600">
-                  {analytics.chemistry}%
-                </div>
-                <div className="text-sm text-gray-600">Chemistry</div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="bg-gray-50 p-3 rounded">
-                <div className="text-sm text-gray-600">Win Rate</div>
-                <div className="text-lg font-semibold">
-                  {analytics.partnership.winRate.toFixed(1)}%
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded">
-                <div className="text-sm text-gray-600">Avg Score</div>
-                <div className="text-lg font-semibold">
-                  {analytics.partnership.avgScore.toFixed(1)}
-                </div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded">
-                <div className="text-sm text-gray-600">Best Score</div>
-                <div className="text-lg font-semibold">
-                  {analytics.partnership.bestScore}
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Games */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Recent Games</h4>
-              <div className="space-y-2">
-                {analytics.partnership.recentGames.map(game => (
-                  <div 
-                    key={game.matchId}
-                    className={`flex justify-between items-center p-2 rounded ${
-                      game.result === 'W' ? 'bg-green-50' : 'bg-red-50'
-                    }`}
-                  >
-                    <div className="text-sm">
-                      {formatDate(game.date, 'date')}
-                    </div>
-                    <div className="font-medium">
-                      {game.score} - {game.opponentScore}
-                    </div>
-                    <div className={game.result === 'W' ? 'text-green-600' : 'text-red-600'}>
-                      {game.result}
-                    </div>
+          <motion.div key={team.join('-')} variants={itemVariants}>
+            <Card>
+              <CardContent className="p-6 space-y-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Users className="h-4 w-4 text-primary" />
+                      {getPlayerName(team[0])} & {getPlayerName(team[1])}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {analytics.partnership.gamesPlayed} games together
+                    </p>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
+                  <Badge variant="info" className="text-lg">
+                    {analytics.chemistry}%
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Win Rate</p>
+                    <p className="text-lg font-semibold">
+                      {analytics.partnership.winRate.toFixed(1)}%
+                    </p>
+                  </div>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Avg Score</p>
+                    <p className="text-lg font-semibold">
+                      {analytics.partnership.avgScore.toFixed(1)}
+                    </p>
+                  </div>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Best Score</p>
+                    <p className="text-lg font-semibold">
+                      {analytics.partnership.bestScore}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium mb-3">Recent Games</h4>
+                  <div className="space-y-2">
+                    {analytics.partnership.recentGames.map(game => (
+                      <div 
+                        key={game.matchId}
+                        className={`flex justify-between items-center p-3 rounded-lg ${
+                          game.result === 'W' 
+                            ? 'bg-green-500/10 text-green-700 dark:text-green-300' 
+                            : 'bg-red-500/10 text-red-700 dark:text-red-300'
+                        }`}
+                      >
+                        <span className="text-sm">
+                          {formatDate(game.date, 'date')}
+                        </span>
+                        <span className="font-medium">
+                          {game.score} - {game.opponentScore}
+                        </span>
+                        <Badge variant={game.result === 'W' ? 'success' : 'danger'}>
+                          {game.result}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     );
   };
 
   const renderTrends = () => (
-    <div className="space-y-6">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
       {/* Time Distribution */}
       {insights && (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Match Time Distribution</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={Object.entries(insights.trends.byTime).map(([time, count]) => ({
-                time,
-                matches: count
-              }))}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="matches" fill="#4F46E5" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="space-y-1">
+                <h3 className="text-lg font-semibold">Match Time Distribution</h3>
+                <p className="text-sm text-muted-foreground">
+                  When matches are typically played
+                </p>
+              </div>
+              <Calendar className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={Object.entries(insights.trends.byTime).map(([time, count]) => ({
+                  time,
+                  matches: count
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="time" className="text-muted-foreground text-xs" />
+                  <YAxis className="text-muted-foreground text-xs" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Bar dataKey="matches" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       )}
-
-      {/* Score Distribution */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">Score Distribution</h3>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={
-              Object.entries(
-                matches
-                  .filter(m => m.status === 'completed')
-                  .reduce((acc, match) => {
-                    const score1 = match.teams.team1.score;
-                    const score2 = match.teams.team2.score;
-                    acc[score1] = (acc[score1] || 0) + 1;
-                    acc[score2] = (acc[score2] || 0) + 1;
-                    return acc;
-                  }, {} as Record<number, number>)
-              ).map(([score, count]) => ({
-                score: Number(score),
-                occurrences: count
-              })).sort((a, b) => a.score - b.score)
-            }>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="score" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="occurrences" fill="#4F46E5" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Win Margin Distribution */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">Win Margin Distribution</h3>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={
-              Object.entries(
-                matches
-                  .filter(m => m.status === 'completed')
-                  .reduce((acc, match) => {
-                    const margin = Math.abs(
-                      match.teams.team1.score - match.teams.team2.score
-                    );
-                    acc[margin] = (acc[margin] || 0) + 1;
-                    return acc;
-                  }, {} as Record<number, number>)
-              ).map(([margin, count]) => ({
-                margin: Number(margin),
-                matches: count
-              })).sort((a, b) => a.margin - b.margin)
-            }>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="margin" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="matches" fill="#4F46E5" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
 
       {/* Form Comparison */}
       {leaderboard.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Player Form Comparison</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={leaderboard.slice(0, 5).map(entry => ({
-                name: entry.player.name,
-                ...entry.stats.advanced.performance
-              }))}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="category" dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="last5Games" 
-                  name="Last 5 Games"
-                  stroke="#4F46E5" 
-                  strokeWidth={2}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="last10Games" 
-                  name="Last 10 Games"
-                  stroke="#10B981" 
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="space-y-1">
+                <h3 className="text-lg font-semibold">Player Form Comparison</h3>
+                <p className="text-sm text-muted-foreground">
+                  Recent performance of top players
+                </p>
+              </div>
+              <Activity className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={leaderboard.slice(0, 5).map(entry => ({
+                  name: entry.player.name,
+                  ...entry.stats.advanced.performance
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" className="text-muted-foreground text-xs" />
+                  <YAxis className="text-muted-foreground text-xs" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="last5Games"
+                    name="Last 5 Games"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="last10Games"
+                    name="Last 10 Games"
+                    stroke="hsl(var(--success))"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       )}
-    </div>
+    </motion.div>
   );
 
   if (loading) {
@@ -447,49 +586,61 @@ const Stats = () => {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-100 text-red-700 rounded">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-4 bg-destructive/10 text-destructive rounded-lg"
+      >
         {error}
-      </div>
+      </motion.div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Statistics</h1>
-      
-      {/* Navigation Tabs */}
-      <div className="flex space-x-1 border-b">
-        {(['overview', 'players', 'teams', 'trends'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg ${
-              activeTab === tab
-                ? 'bg-white text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
+      <div className="flex flex-col justify-between gap-4">
+        <h1 className="text-2xl font-bold">Statistics</h1>
+        <Tabs
+          tabs={[
+            { id: "overview", label: "Overview", content: renderOverview() },
+            {
+              id: "players",
+              label: "Players",
+              content: (
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  <div className="lg:col-span-1">{renderLeaderboard()}</div>
+                  <div className="lg:col-span-3">{renderPlayerStats()}</div>
+                </div>
+              ),
+            },
+            { id: "teams", label: "Teams", content: renderTeamStats() },
+            { id: "trends", label: "Trends", content: renderTrends() },
+          ]}
+          defaultTab={activeTab}
+          onChange={(tabId) => setActiveTab(tabId as typeof activeTab)}
+          className="w-full md:w-auto"
+        />
       </div>
 
-      {/* Content based on active tab */}
-      <div className="pt-4">
-        {activeTab === 'overview' && renderOverview()}
-        {activeTab === 'players' && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-1">
-              {renderLeaderboard()}
+      {/* <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="pt-4"
+        >
+          {activeTab === "overview" && renderOverview()}
+          {activeTab === "players" && (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <div className="lg:col-span-1">{renderLeaderboard()}</div>
+              <div className="lg:col-span-3">{renderPlayerStats()}</div>
             </div>
-            <div className="lg:col-span-3">
-              {renderPlayerStats()}
-            </div>
-          </div>
-        )}
-        {activeTab === 'teams' && renderTeamStats()}
-        {activeTab === 'trends' && renderTrends()}
-      </div>
+          )}
+          {activeTab === "teams" && renderTeamStats()}
+          {activeTab === "trends" && renderTrends()}
+        </motion.div>
+      </AnimatePresence> */}
     </div>
   );
 };

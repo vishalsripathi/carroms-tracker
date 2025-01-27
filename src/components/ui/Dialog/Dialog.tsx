@@ -107,6 +107,15 @@ const CloseButton = () => {
   );
 };
 
+interface ActionDialogProps extends Omit<DialogProps, 'children'> {
+  title: string;
+  description?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  onConfirm: () => void;
+  variant?: string;
+}
+
 export const ActionDialog: React.FC<ActionDialogProps> = ({
   title,
   description,
