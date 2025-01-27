@@ -8,6 +8,8 @@ import { useAuthStore } from './store/authStore'
 import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import LoadingSpinner from './components/ui/LoadingSpinner'
+import InstallPrompt from './components/pwa/InstallPrompt';
+import OfflineIndicator from './components/pwa/OfflineIndicator';
 
 // Pages
 import Login from './pages/Login'
@@ -36,6 +38,9 @@ function App() {
   }
 
   return (
+    <>
+    <OfflineIndicator />
+    <InstallPrompt />
     <ThemeProvider>
       <div className="min-h-screen bg-background text-text-primary transition-colors duration-200">
         <BrowserRouter>
@@ -56,6 +61,7 @@ function App() {
         </BrowserRouter>
       </div>
     </ThemeProvider>
+    </>
   )
 }
 
