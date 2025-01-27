@@ -32,17 +32,17 @@ export default defineConfig({
     })
   ],
   build: {
-    sourcemap: false,
+    outDir: 'dist',
+    assetsDir: 'assets',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore']
-        }
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
-    },
-    chunkSizeWarningLimit: 1000
+    }
   },
+  base: '/',
   server: {
     host: true,
     port: 5173
