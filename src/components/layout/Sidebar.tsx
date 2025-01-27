@@ -5,8 +5,7 @@ import {
   Home, 
   Calendar, 
   Users, 
-  BarChart2, 
-  Settings,
+  BarChart2,
   ChevronLeft,
   ChevronRight 
 } from 'lucide-react';
@@ -26,7 +25,6 @@ const Sidebar = ({ collapsed, onCollapse }: SidebarProps) => {
     { icon: Calendar, label: 'Matches', path: '/matches' },
     { icon: Users, label: 'Players', path: '/players' },
     { icon: BarChart2, label: 'Statistics', path: '/stats' },
-    { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
   return (

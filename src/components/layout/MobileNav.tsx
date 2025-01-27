@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, Calendar, Users, BarChart2, Plus } from 'lucide-react';
+import { Home, Calendar, Users, BarChart2 } from 'lucide-react';
 
 const MobileNav = () => {
   const navigate = useNavigate();
@@ -16,13 +16,13 @@ const MobileNav = () => {
   return (
     <>
       {/* FAB for quick actions */}
-      <motion.button
+      {/* <motion.button
         className="fixed right-4 bottom-20 z-50 bg-primary text-primary-foreground p-4 rounded-full shadow-lg"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
       >
         <Plus className="h-6 w-6" />
-      </motion.button>
+      </motion.button> */}
 
       {/* Bottom Navigation */}
       <motion.div 
