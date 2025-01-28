@@ -183,6 +183,7 @@ const Players = () => {
   
     return (
       <motion.div 
+        key={player.id}
         variants={itemVariants}
         whileHover={{ y: -4 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -264,7 +265,7 @@ const Players = () => {
                 <AnimatePresence mode="popLayout">
                   {formGuide.map((result, idx) => (
                     <motion.div
-                      key={idx}
+                      key={`${player.id}-form-${idx}-${result}`}
                       initial={{ scale: 0, rotate: -180 }}
                       animate={{ scale: 1, rotate: 0 }}
                       exit={{ scale: 0, rotate: 180 }}
@@ -414,7 +415,11 @@ const Players = () => {
 
       {/* Players Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {players.map(player => renderPlayerCard(player))}
+      {players.map(player => (
+        <div key={player.id}>
+          {renderPlayerCard(player)}
+        </div>
+      ))}
     </div>
 
     {/* Keep existing Dialog component */}
