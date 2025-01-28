@@ -1,4 +1,4 @@
-// src/components/layout/Layout.tsx
+// Layout.tsx
 import { useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,6 +6,7 @@ import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import MobileNav from "./MobileNav";
 import { ThemeToggle } from "../ui/ThemeToggle/ThemeToggle";
+import { ScrollProgress } from "../ui/ScrollProgress/ScrollProgress";
 
 const Layout = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
@@ -24,55 +25,52 @@ const Layout = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Close mobile sidebar on route change
   useEffect(() => {
     if (isMobile) {
       setShowSidebar(false);
     }
   }, [location, isMobile]);
 
-
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar onMenuClick={() => setShowSidebar(!showSidebar)}>
+      <ScrollProgress />
+      <Navbar
+        onMenuClick={() => !isMobile && setShowSidebar(!showSidebar)}
+        showMenuButton={!isMobile}
+      >
         <ThemeToggle />
       </Navbar>
 
       <div className="flex pt-16">
-        {" "}
-        {/* Add pt-16 to account for navbar height */}
         <AnimatePresence mode="wait">
-          {showSidebar && (
+          {showSidebar && !isMobile && (
             <motion.div
               initial={{ x: -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className={`${
-                isMobile ? "fixed" : "sticky top-16 h-[calc(100vh-64px)]"
-              }`}
+              className="sticky top-16 h-[calc(100vh-64px)]"
             >
               <Sidebar
                 collapsed={sidebarCollapsed}
                 onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
               />
-              {isMobile && (
-                <motion.div
-                  className="fixed inset-0 bg-black/50 -z-10"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setShowSidebar(false)}
-                />
-              )}
             </motion.div>
           )}
         </AnimatePresence>
-        <main
-          className={`flex-1 p-4 md:p-6 lg:p-8 transition-all duration-300`}
-        >
-          <Outlet />
-          {isMobile && <div className="h-16" />}
+        
+        <main className="flex-1 p-4 md:p-6 lg:p-8 transition-all duration-300 pb-20 lg:pb-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
         </main>
       </div>
 

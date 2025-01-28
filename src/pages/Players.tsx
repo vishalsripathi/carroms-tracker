@@ -177,24 +177,33 @@ const Players = () => {
   const renderPlayerCard = (player: Player) => {
     const playerStat = playerStats.find(p => p.player.id === player.id);
     if (!playerStat) return null;
-
+  
     const stats = playerStat.stats;
     const formGuide = stats.advanced.formGuide;
-
+  
     return (
-      <motion.div variants={itemVariants}>
+      <motion.div 
+        variants={itemVariants}
+        whileHover={{ y: -4 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
         <Card className="h-full">
-          <CardContent className="p-6 space-y-6">
-            {/* Player Header */}
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <Avatar
-                  fallback={player.name[0]}
-                  className="h-12 w-12"
-                />
-                <div>
-                  <h3 className="text-lg font-semibold">{player.name}</h3>
-                  <p className="text-sm text-muted-foreground">{player.email}</p>
+          <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            {/* Player Header - Fixed mobile layout */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Avatar
+                    fallback={player.name[0]}
+                    className="h-10 w-10 sm:h-12 sm:w-12 ring-2 ring-primary/10 ring-offset-2 ring-offset-background"
+                  />
+                </motion.div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold truncate">{player.name}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">{player.email}</p>
                 </div>
               </div>
               <Select
@@ -204,54 +213,68 @@ const Players = () => {
                   { value: 'available', label: 'Available' },
                   { value: 'unavailable', label: 'Unavailable' }
                 ]}
-                className={`w-32 ${
+                className={`w-full sm:w-32 ${
                   player.availability.status === 'available' 
                     ? 'text-green-600 dark:text-green-400' 
                     : 'text-red-600 dark:text-red-400'
                 }`}
               />
             </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
+  
+            {/* Stats Grid - Enhanced for mobile */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <motion.div 
+                className="bg-muted/50 p-3 sm:p-4 rounded-lg"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <div className="flex items-center gap-2 mb-1 sm:mb-2">
                   <Trophy className="h-4 w-4 text-primary" />
-                  <p className="text-sm text-muted-foreground">Win Rate</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Win Rate</p>
                 </div>
-                <p className="text-2xl font-bold">
+                <p className="text-lg sm:text-2xl font-bold">
                   {stats.basic.winRate.toFixed(1)}%
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {stats.basic.wins}W - {stats.basic.losses}L
                 </p>
-              </div>
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
+              </motion.div>
+              <motion.div 
+                className="bg-muted/50 p-3 sm:p-4 rounded-lg"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <div className="flex items-center gap-2 mb-1 sm:mb-2">
                   <ChartLine className="h-4 w-4 text-primary" />
-                  <p className="text-sm text-muted-foreground">Avg Score</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Avg Score</p>
                 </div>
-                <p className="text-2xl font-bold">
+                <p className="text-lg sm:text-2xl font-bold">
                   {stats.basic.avgScore.toFixed(1)}
                 </p>
-              </div>
+              </motion.div>
             </div>
-
-            {/* Form Guide */}
+  
+            {/* Form Guide - Enhanced animations */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2">
                 <Star className="h-4 w-4 text-primary" />
                 <p className="text-sm font-medium">Recent Form</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2">
                 <AnimatePresence mode="popLayout">
                   {formGuide.map((result, idx) => (
                     <motion.div
                       key={idx}
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      exit={{ scale: 0, rotate: 180 }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 300, 
+                        damping: 20,
+                        delay: idx * 0.05 
+                      }}
+                      className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
                         result === 'W'
                           ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                           : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
@@ -263,45 +286,48 @@ const Players = () => {
                 </AnimatePresence>
               </div>
             </div>
-
-            {/* Performance Metrics */}
+  
+            {/* Performance Metrics - Responsive text */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Last 5 Games</p>
-                <p className="text-lg font-semibold">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Last 5 Games</p>
+                <p className="text-base sm:text-lg font-semibold">
                   {stats.advanced.performance.last5Games.toFixed(1)}%
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">This Month</p>
-                <p className="text-lg font-semibold">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">This Month</p>
+                <p className="text-base sm:text-lg font-semibold">
                   {stats.advanced.performance.thisMonth.toFixed(1)}%
                 </p>
               </div>
             </div>
-
-            {/* Best Partner */}
+  
+            {/* Best Partner - Enhanced responsiveness */}
             {stats.advanced.preferredPartners.length > 0 && (
-              <div className="pt-2 border-t border-border">
+              <motion.div 
+                className="pt-2 border-t border-border"
+                whileHover={{ scale: 1.01 }}
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="h-4 w-4 text-primary" />
                   <p className="text-sm font-medium">Best Partner</p>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between p-2 sm:p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Avatar
                       fallback={players.find(p => p.id === stats.advanced.preferredPartners[0].partnerId)?.name[0]}
-                      size="sm"
+                      className="h-6 w-6 sm:h-8 sm:w-8"
                     />
-                    <span className="font-medium">
+                    <span className="font-medium text-sm truncate">
                       {players.find(p => p.id === stats.advanced.preferredPartners[0].partnerId)?.name}
                     </span>
                   </div>
-                  <Badge variant="primary">
+                  <Badge variant="primary" className="ml-2 shrink-0">
                     {stats.advanced.preferredPartners[0].winRate.toFixed(1)}% WR
                   </Badge>
                 </div>
-              </div>
+              </motion.div>
             )}
           </CardContent>
         </Card>
@@ -315,30 +341,31 @@ const Players = () => {
 
   return (
     <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Players</h1>
-        <Button
-          onClick={() => setShowAddForm(true)}
-          leftIcon={<UserPlus className="h-4 w-4" />}
-        >
-          Add Player
-        </Button>
-      </div>
+    variants={containerVariants}
+    initial="hidden"
+    animate="visible"
+    className="space-y-4 sm:space-y-6 max-w-[1920px] mx-auto px-2 sm:px-4"
+  >
+    <div className="flex justify-between items-center">
+      <h1 className="text-xl sm:text-2xl font-bold">Players</h1>
+      <Button
+        onClick={() => setShowAddForm(true)}
+        leftIcon={<UserPlus className="h-4 w-4" />}
+        className="text-sm sm:text-base"
+      >
+        Add Player
+      </Button>
+    </div>
 
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg"
-        >
-          {error}
-        </motion.div>
-      )}
+    {error && (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-3 sm:p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-sm"
+      >
+        {error}
+      </motion.div>
+    )}
 
       {/* Add Player Dialog */}
       <Dialog 
@@ -387,9 +414,11 @@ const Players = () => {
 
       {/* Players Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {players.map(player => renderPlayerCard(player))}
-      </div>
-    </motion.div>
+      {players.map(player => renderPlayerCard(player))}
+    </div>
+
+    {/* Keep existing Dialog component */}
+  </motion.div>
   );
 };
 

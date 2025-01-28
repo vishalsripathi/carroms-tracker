@@ -74,15 +74,11 @@ const Matches = () => {
   }, []);
 
   const handleGenerateTeams = async (teams: [string, string][]) => {
-    await new Promise(resolve => setTimeout(resolve, 500)); // Wait for animation
     setFormData(prev => ({
       ...prev,
       team1Players: teams[0],
       team2Players: teams[1]
     }));
-
-    console.log(teams, "Teams");
-    setShowTeamGenerator(false);
     setShowAddForm(true);
   };
 
@@ -241,10 +237,13 @@ const Matches = () => {
           open={showTeamGenerator}
           onClose={() => setShowTeamGenerator(false)}
         >
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <TeamGenerator
               availablePlayers={availablePlayers}
-              onTeamsGenerated={handleGenerateTeams}
+              onTeamsGenerated={(teams) => {
+                handleGenerateTeams(teams);
+                setShowTeamGenerator(false);
+              }}
               onClose={() => setShowTeamGenerator(false)}
             />
           </DialogContent>

@@ -1,5 +1,4 @@
-// src/components/matches/TeamGenerator.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTeamGeneration } from '../../hooks/useTeamGeneration';
 import { Player } from '../../types/player';
@@ -9,7 +8,8 @@ import { Card, CardContent } from '../ui/Card';
 import { Avatar } from '../ui/Avatar';
 import { 
   Users, X, Wand2, 
-  Trophy, UserPlus, Shuffle 
+  Trophy, UserPlus, Shuffle,
+  ArrowRight
 } from 'lucide-react';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
@@ -19,15 +19,19 @@ interface TeamGeneratorProps {
   onClose: () => void;
 }
 
-const TeamsList = ({ 
-  title, 
-  players, 
-  colorScheme
-}: { 
+interface TeamListProps {
   title: string;
   players: string[];
   colorScheme: 'blue' | 'green';
-}) => {
+  animate?: boolean;
+}
+
+const TeamsList = ({ 
+  title, 
+  players, 
+  colorScheme,
+  animate = false 
+}: TeamListProps) => {
   const colors = {
     blue: {
       bg: 'bg-blue-50 dark:bg-blue-900/20',
@@ -44,35 +48,130 @@ const TeamsList = ({
   }[colorScheme];
 
   return (
-    <Card className={`${colors.bg} border ${colors.border}`}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <div className={`p-1.5 rounded-full ${colors.iconBg}`}>
-            <Trophy className={`h-4 w-4 ${colors.text}`} />
-          </div>
-          <h4 className={`font-medium ${colors.text}`}>{title}</h4>
-        </div>
-        <div className="space-y-2">
-          {players.map((name, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-gray-800"
+    <motion.div
+      initial={animate ? { opacity: 0, y: 20 } : false}
+      animate={animate ? { opacity: 1, y: 0 } : false}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className={`${colors.bg} border ${colors.border} hover:shadow-lg transition-shadow duration-200`}>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <motion.div 
+              className={`p-1.5 rounded-full ${colors.iconBg}`}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Avatar
-                size="sm"
-                fallback={name[0]}
-              />
-              <span className="text-sm font-medium">
-                {name}
-              </span>
+              <Trophy className={`h-4 w-4 ${colors.text}`} />
             </motion.div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            <h4 className={`font-medium ${colors.text}`}>{title}</h4>
+          </div>
+          <div className="space-y-2">
+            <AnimatePresence mode="popLayout">
+              {players.map((name, index) => (
+                <motion.div
+                  key={name + index}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ 
+                    delay: index * 0.2,
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 25
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-gray-800 hover:shadow-md transition-shadow duration-200"
+                >
+                  <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                    <Avatar
+                      size="sm"
+                      fallback={name[0]}
+                      className="ring-2 ring-primary/10 ring-offset-2 ring-offset-background"
+                    />
+                  </motion.div>
+                  <span className="text-sm font-medium">
+                    {name}
+                  </span>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+};
+
+const ShufflingTeams = ({ 
+  teamNames, 
+  onComplete 
+}: { 
+  teamNames: { team1: string[]; team2: string[] },
+  onComplete: () => void 
+}) => {
+  const [shuffledPlayers, setShuffledPlayers] = useState<string[]>([
+    ...teamNames.team1,
+    ...teamNames.team2
+  ]);
+  
+  useEffect(() => {
+    let shuffleCount = 0;
+    const maxShuffles = 20; // Increased number of shuffles
+    const shuffleInterval = 150; // Decreased interval for smoother animation
+    
+    const interval = setInterval(() => {
+      setShuffledPlayers(prev => {
+        // More dramatic shuffle with multiple passes
+        let newArray = [...prev];
+        for (let i = 0; i < 3; i++) {
+          newArray = newArray
+            .map(value => ({ value, sort: Math.random() }))
+            .sort((a, b) => a.sort - b.sort)
+            .map(({ value }) => value);
+        }
+        return newArray;
+      });
+      
+      shuffleCount++;
+      
+      if (shuffleCount >= maxShuffles) {
+        clearInterval(interval);
+        // Longer delay before completion
+        setTimeout(onComplete, 800);
+      }
+    }, shuffleInterval);
+  
+    return () => clearInterval(interval);
+  }, [onComplete]);
+
+  return (
+    <motion.div 
+      className="grid grid-cols-1 md:grid-cols-2 gap-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <Card className="col-span-full">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {shuffledPlayers.map((name, idx) => (
+              <motion.div
+                key={name + idx}
+                layout
+                transition={{
+                  type: "spring",
+                  stiffness: 200,
+                  damping: 20
+                }}
+                className="flex items-center gap-2 p-2 rounded-lg bg-muted"
+              >
+                <Avatar size="sm" fallback={name[0]} />
+                <span className="text-sm font-medium truncate">{name}</span>
+              </motion.div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };
 
@@ -86,11 +185,10 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
     teams: [string, string][];
     teamNames: { team1: string[]; team2: string[] };
   } | null>(null);
-  // const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
 
   const handleGenerateTeams = async () => {
     try {
-      // setIsRegenerating(true);
       if (availablePlayers.length < 4) {
         throw new Error('Need at least 4 players to generate teams');
       }
@@ -101,19 +199,20 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
         throw new Error('Not enough valid players to generate teams');
       }
 
+      setIsShuffling(true);
       const result = await generateTeams(validPlayers);
+      
       if (result) {
-        console.log('Generated teams, result: ' + result)
         setGeneratedTeams(result);
-        // Wait for teams to show and animation to complete
-        await new Promise(resolve => setTimeout(resolve, 800));
-        onTeamsGenerated(result.teams);
       }
     } catch (err) {
       console.error('Team generation error:', err);
-    } finally {
-      // setIsRegenerating(false);
+      setIsShuffling(false);
     }
+  };
+
+  const handleShuffleComplete = () => {
+    setIsShuffling(false);
   };
 
   if (loading) {
@@ -129,31 +228,47 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header - Mobile First */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary-50 dark:bg-primary-900/20">
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="p-2 rounded-lg bg-primary-50 dark:bg-primary-900/20"
+          >
             <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-          </div>
+          </motion.div>
           <h3 className="text-lg font-semibold">Team Generator</h3>
         </div>
-        <div className="flex items-center gap-2">
-          {generatedTeams ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGenerateTeams}
-              disabled={loading || availablePlayers.length < 4}
-              leftIcon={<Shuffle className="h-4 w-4" />}
-            >
-              Regenerate
-            </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {generatedTeams && !isShuffling ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateTeams}
+                disabled={loading || isShuffling || availablePlayers.length < 4}
+                leftIcon={<Shuffle className="h-4 w-4" />}
+                className="flex-1 sm:flex-none"
+              >
+                Regenerate
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => onTeamsGenerated(generatedTeams.teams)}
+                rightIcon={<ArrowRight className="h-4 w-4" />}
+                className="flex-1 sm:flex-none"
+              >
+                Continue
+              </Button>
+            </>
           ) : (
             <Button
               size="sm"
               onClick={handleGenerateTeams}
-              disabled={loading || availablePlayers.length < 4}
+              disabled={loading || isShuffling || availablePlayers.length < 4}
               leftIcon={<Wand2 className="h-4 w-4" />}
+              className="flex-1 sm:flex-none"
             >
               Generate Teams
             </Button>
@@ -162,7 +277,7 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="rounded-full"
+            className="rounded-full shrink-0"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -174,7 +289,7 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
         error={error}
       />
 
-      {/* Available Players Grid */}
+      {/* Available Players Grid - Responsive */}
       <div className="space-y-3">
         <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
           <Users className="h-4 w-4" />
@@ -187,12 +302,16 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
               layout
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800"
+              whileHover={{ scale: 1.02 }}
+              className="flex items-center gap-2 p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors duration-200"
             >
-              <Avatar
-                size="sm"
-                fallback={player.name[0]}
-              />
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                <Avatar
+                  size="sm"
+                  fallback={player.name[0]}
+                  className="ring-2 ring-primary/10 ring-offset-2 ring-offset-background"
+                />
+              </motion.div>
               <span className="text-sm font-medium truncate">
                 {player.name}
               </span>
@@ -201,26 +320,41 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
         </div>
       </div>
 
-      {/* Generated Teams */}
+      {/* Generated Teams with Shuffle Animation */}
       <AnimatePresence mode="wait">
         {generatedTeams && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          >
-            <TeamsList
-              title="Team 1"
-              players={generatedTeams.teamNames.team1}
-              colorScheme="blue"
+          isShuffling ? (
+            <ShufflingTeams 
+              teamNames={generatedTeams.teamNames}
+              onComplete={handleShuffleComplete}
             />
-            <TeamsList
-              title="Team 2"
-              players={generatedTeams.teamNames.team2}
-              colorScheme="green"
-            />
-          </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ 
+                duration: 0.6, // Increase from 0.3 to 0.6
+                type: "spring",
+                stiffness: 150, // Lower values make animation slower
+                damping: 20
+              }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              <TeamsList
+                title="Team 1"
+                players={generatedTeams.teamNames.team1}
+                colorScheme="blue"
+                animate
+              />
+              <TeamsList
+                title="Team 2"
+                players={generatedTeams.teamNames.team2}
+                colorScheme="green"
+                animate
+              />
+            </motion.div>
+          )
         )}
       </AnimatePresence>
 

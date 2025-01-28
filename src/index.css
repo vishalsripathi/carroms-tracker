@@ -58,3 +58,21 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  
+  body {
+    @apply antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Prevent content jumping when scrollbar appears */
+  html {
+    scrollbar-gutter: stable;
+  }
+}

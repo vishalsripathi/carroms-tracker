@@ -9,9 +9,11 @@ import { Avatar } from '../ui/Avatar';
 interface NavbarProps {
   children?: React.ReactNode;
   onMenuClick?: () => void;
+  showMenuButton?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ children, onMenuClick }) => {
+
+const Navbar: React.FC<NavbarProps> = ({ children, onMenuClick, showMenuButton = true }) => {
   const { user, signOut } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -21,12 +23,14 @@ const Navbar: React.FC<NavbarProps> = ({ children, onMenuClick }) => {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <button
-              onClick={onMenuClick}
-              className="md:hidden p-2 rounded-lg text-muted-foreground"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
+            {showMenuButton && (
+                <button
+                  onClick={onMenuClick}
+                  className="md:hidden p-2 rounded-lg text-muted-foreground"
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
+              )}
             <Link to="/" className="flex items-center ml-2 md:ml-0">
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-foreground bg-clip-text text-transparent">
                 Carrom Tracker
