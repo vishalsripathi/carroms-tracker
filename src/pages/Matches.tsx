@@ -11,10 +11,10 @@ import { Dialog, DialogContent } from '../components/ui/Dialog';
 import TeamGenerator from '../components/matches/TeamGenerator';
 import MatchCard from '../components/matches/MatchCard';
 import { Plus, Users2, AlertTriangle, Calendar as CalendarIcon } from 'lucide-react';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { Match, Player } from '../types';
 import { Select } from '../components/ui/Select/Select';
 import { Calendar } from '../components/ui/Calendar/Calendar';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner/LoadingSpinner';
 
 interface MatchFormData {
   date: Date;
@@ -139,9 +139,9 @@ const Matches = () => {
     p && p.id && p.availability?.status === 'available'
   );
 
-  if (loading && matches.length === 0) {
-    return <LoadingSpinner fullScreen />;
-  }
+  // if (loading && matches.length === 0) {
+  //   return <LoadingSpinner />;
+  // }
 
   const getPlayerSelectOptions = (excludeIds: string[], currentTeam: 'team1' | 'team2', index: number) => {
     // Get all selected player IDs except current selection
@@ -379,7 +379,7 @@ const Matches = () => {
                 exit={{ opacity: 0 }}
                 className="flex justify-center py-12"
               >
-                <LoadingSpinner size="large" />
+                <LoadingSpinner size="lg" />
               </motion.div>
             ) : matches.length === 0 ? (
               <motion.div

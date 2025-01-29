@@ -5,7 +5,7 @@ import {
   Calendar, 
   Users, 
   BarChart2,
-  ChevronLeft
+  ChevronRight
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { useAuthStore } from '../../store/authStore';
@@ -123,7 +123,7 @@ const Sidebar = ({ collapsed, onCollapse }: SidebarProps) => {
           animate={{ rotate: collapsed ? 0 : 180 }}
           transition={{ duration: 0.3 }}
         >
-          <ChevronLeft size={14} />
+          <ChevronRight size={14} />
         </motion.div>
       </motion.button>
     </motion.div>

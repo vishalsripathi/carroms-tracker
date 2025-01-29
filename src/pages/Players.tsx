@@ -13,7 +13,6 @@ import { Select } from '../components/ui/Select/Select';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { UserPlus, Trophy, Users, ChartLine, Star } from 'lucide-react';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -336,9 +335,9 @@ const Players = () => {
     );
   };
 
-  if (loading && players.length === 0) {
-    return <LoadingSpinner fullScreen />;
-  }
+  // if (loading && players.length === 0) {
+  //   return <LoadingSpinner fullScreen />;
+  // }
 
   return (
     <motion.div 

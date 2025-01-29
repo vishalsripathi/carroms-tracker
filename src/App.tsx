@@ -7,7 +7,6 @@ import { useAuthStore } from './store/authStore'
 // Components
 import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/auth/ProtectedRoute'
-import LoadingSpinner from './components/ui/LoadingSpinner'
 import InstallPrompt from './components/pwa/InstallPrompt';
 import OfflineIndicator from './components/pwa/OfflineIndicator';
 
@@ -18,6 +17,7 @@ import Matches from './pages/Matches'
 import Players from './pages/Players'
 import Stats from './pages/Stats'
 import { ThemeProvider } from './providers/theme'
+import { LoadingSpinner } from './components/ui/LoadingSpinner/LoadingSpinner'
 
 function App() {
   const setUser = useAuthStore(useCallback(state => state.setUser, []))
@@ -34,7 +34,7 @@ function App() {
   }, [setUser, setInitialized])
 
   if (!initialized) {
-    return <LoadingSpinner fullScreen />
+    return <LoadingSpinner />
   }
 
   return (

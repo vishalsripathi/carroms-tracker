@@ -11,7 +11,7 @@ import {
   Trophy, UserPlus, Shuffle,
   ArrowRight
 } from 'lucide-react';
-import LoadingSpinner from '../ui/LoadingSpinner';
+import { LoadingSpinner } from '../ui/LoadingSpinner/LoadingSpinner';
 
 interface TeamGeneratorProps {
   availablePlayers: Player[];
@@ -218,7 +218,7 @@ const TeamGenerator: React.FC<TeamGeneratorProps> = ({
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4">
-        <LoadingSpinner size="large" />
+        <LoadingSpinner size="lg" />
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Generating balanced teams...
         </p>

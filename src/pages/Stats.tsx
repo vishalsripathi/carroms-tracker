@@ -7,7 +7,6 @@ import { Match } from '../types/match';
 import { Player } from '../types/player';
 import { Card, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
 import PlayerStatsCard from '../components/stats/PlayerStatsCard';
 import { formatDate } from '../utils/dateUtils';
 import {
@@ -580,9 +579,9 @@ const Stats = () => {
     </motion.div>
   );
 
-  if (loading) {
-    return <LoadingSpinner fullScreen />;
-  }
+  // if (loading) {
+  //   return <LoadingSpinner fullScreen />;
+  // }
 
   if (error) {
     return (

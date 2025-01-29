@@ -15,11 +15,11 @@ import { TeamSection } from './TeamSection';
 import { MatchHeader } from './MatchHeader';
 import { MatchActions } from './MatchActions';
 import { MatchControls } from './MatchControls';
-import LoadingSpinner from '../ui/LoadingSpinner';
 import MatchHistoryDialog from './MatchHistoryDialog';
 import MatchComments from './MatchComments';
 import SubstitutionModal from './SubstitutionModal';
 import { AlertDialog } from '../ui/AlertDialog/AlertDialog';
+import { LoadingSpinner } from '../ui/LoadingSpinner/LoadingSpinner';
 
 interface MatchCardProps {
   match: Match;
