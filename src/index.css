@@ -76,3 +76,37 @@
     scrollbar-gutter: stable;
   }
 }
+
+@layer base {
+  * {
+    @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary)/0.3) hsl(var(--background));
+  }
+
+  /* Chrome, Edge, and Safari */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded-full border-2 border-solid border-transparent bg-clip-padding hover:bg-primary/50 transition-colors;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    @apply bg-primary/40 hover:bg-primary/60;
+  }
+
+  .dark ::-webkit-scrollbar-track {
+    @apply bg-background/50;
+  }
+
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}

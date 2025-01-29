@@ -10,6 +10,11 @@
     <link rel="mask-icon" href="/mask-icon.svg" color="#4F46E5" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Carrom Tracker</title>
+    <script>
+      if (!localStorage.theme || localStorage.theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
