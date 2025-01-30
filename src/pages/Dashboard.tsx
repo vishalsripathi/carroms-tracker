@@ -530,7 +530,7 @@ const Dashboard = () => {
     ];
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="container mx-auto lg:px-4">
       {/* Animated Background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />

@@ -247,7 +247,7 @@ const Matches = () => {
       </div>
 
       {/* Content */}
-      <div className="relative space-y-6 px-4 py-6 md:px-6 lg:px-8">
+      <div className="relative space-y-6 lg:px-6">
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
