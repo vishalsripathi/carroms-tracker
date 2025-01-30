@@ -1,20 +1,32 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { collection, getDocs, addDoc, query, orderBy, Timestamp } from 'firebase/firestore';
-import { format } from 'date-fns';
-import * as PopoverPrimitive from '@radix-ui/react-popover';
-import { db } from '../services/firebase';
-import { useAuthStore } from '../store/authStore';
-import { Card, CardContent } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Dialog, DialogContent } from '../components/ui/Dialog';
-import TeamGenerator from '../components/matches/TeamGenerator';
-import MatchCard from '../components/matches/MatchCard';
-import { Plus, Users2, AlertTriangle, Calendar as CalendarIcon } from 'lucide-react';
-import { Match, Player } from '../types';
-import { Select } from '../components/ui/Select/Select';
-import { Calendar } from '../components/ui/Calendar/Calendar';
-import { LoadingSpinner } from '../components/ui/LoadingSpinner/LoadingSpinner';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  query,
+  orderBy,
+  Timestamp,
+} from "firebase/firestore";
+import { format } from "date-fns";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { db } from "../services/firebase";
+import { useAuthStore } from "../store/authStore";
+import { Card, CardContent } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { Dialog, DialogContent } from "../components/ui/Dialog";
+import TeamGenerator from "../components/matches/TeamGenerator";
+import MatchCard from "../components/matches/MatchCard";
+import {
+  Plus,
+  Users2,
+  AlertTriangle,
+  Calendar as CalendarIcon,
+} from "lucide-react";
+import { Match, Player } from "../types";
+import { Select } from "../components/ui/Select/Select";
+import { Calendar } from "../components/ui/Calendar/Calendar";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner/LoadingSpinner";
 
 interface MatchFormData {
   date: Date;
@@ -31,38 +43,42 @@ const Matches = () => {
   const [showTeamGenerator, setShowTeamGenerator] = useState(false);
   const [formData, setFormData] = useState<MatchFormData>({
     date: new Date(),
-    team1Players: ['', ''],
-    team2Players: ['', '']
+    team1Players: ["", ""],
+    team2Players: ["", ""],
+  });
+  const [errors, setErrors] = useState({
+    team1: ["", ""],
+    team2: ["", ""],
   });
 
-  const user = useAuthStore(state => state.user);
+  const user = useAuthStore((state) => state.user);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const [matchesSnapshot, playersSnapshot] = await Promise.all([
-        getDocs(query(collection(db, 'matches'), orderBy('date', 'desc'))),
-        getDocs(collection(db, 'players'))
+        getDocs(query(collection(db, "matches"), orderBy("date", "desc"))),
+        getDocs(collection(db, "players")),
       ]);
 
-      const matchesData = matchesSnapshot.docs.map(doc => ({
+      const matchesData = matchesSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
         date: doc.data().date.toDate(),
         createdAt: doc.data().createdAt.toDate(),
-        updatedAt: doc.data().updatedAt.toDate()
+        updatedAt: doc.data().updatedAt.toDate(),
       })) as Match[];
 
-      const playersData = playersSnapshot.docs.map(doc => ({
+      const playersData = playersSnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       })) as Player[];
 
       setMatches(matchesData);
       setPlayers(playersData);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch data');
+      setError("Failed to fetch data");
       console.error(err);
     } finally {
       setLoading(false);
@@ -74,16 +90,45 @@ const Matches = () => {
   }, []);
 
   const handleGenerateTeams = async (teams: [string, string][]) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       team1Players: teams[0],
-      team2Players: teams[1]
+      team2Players: teams[1],
     }));
     setShowAddForm(true);
   };
 
+  const validateForm = () => {
+    const newErrors = {
+      team1: ["", ""],
+      team2: ["", ""],
+    };
+
+    let hasError = false;
+
+    // Validate Team 1
+    formData.team1Players.forEach((player, idx) => {
+      if (!player) {
+        newErrors.team1[idx] = "Please select a player";
+        hasError = true;
+      }
+    });
+
+    // Validate Team 2
+    formData.team2Players.forEach((player, idx) => {
+      if (!player) {
+        newErrors.team2[idx] = "Please select a player";
+        hasError = true;
+      }
+    });
+
+    setErrors(newErrors);
+    return !hasError;
+  };
+
   const handleAddMatch = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
     if (!user) return;
 
     try {
@@ -93,37 +138,39 @@ const Matches = () => {
         teams: {
           team1: {
             players: formData.team1Players,
-            score: 0
+            score: 0,
           },
           team2: {
             players: formData.team2Players,
-            score: 0
-          }
+            score: 0,
+          },
         },
-        status: 'scheduled',
+        status: "scheduled",
         winner: null,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         createdBy: user.uid,
-        history: [{
-          type: 'creation',
-          timestamp: new Date(),
-          userId: user.uid,
-          data: {}
-        }]
+        history: [
+          {
+            type: "creation",
+            timestamp: new Date(),
+            userId: user.uid,
+            data: {},
+          },
+        ],
       };
 
-      await addDoc(collection(db, 'matches'), newMatch);
+      await addDoc(collection(db, "matches"), newMatch);
       await fetchData();
       setShowAddForm(false);
       // Reset form data
       setFormData({
         date: new Date(),
-        team1Players: ['', ''],
-        team2Players: ['', '']
+        team1Players: ["", ""],
+        team2Players: ["", ""],
       });
     } catch (err) {
-      setError('Failed to add match');
+      setError("Failed to add match");
       console.error(err);
     } finally {
       setLoading(false);
@@ -131,35 +178,42 @@ const Matches = () => {
   };
 
   const getPlayerName = (playerId: string) => {
-    const player = players.find(p => p.id === playerId);
-    return player ? player.name : 'Unknown Player';
+    const player = players.find((p) => p.id === playerId);
+    return player ? player.name : "Unknown Player";
   };
 
-  const availablePlayers = players.filter(p => 
-    p && p.id && p.availability?.status === 'available'
+  const availablePlayers = players.filter(
+    (p) => p && p.id && p.availability?.status === "available"
   );
 
   // if (loading && matches.length === 0) {
   //   return <LoadingSpinner />;
   // }
 
-  const getPlayerSelectOptions = (excludeIds: string[], currentTeam: 'team1' | 'team2', index: number) => {
+  const getPlayerSelectOptions = (
+    excludeIds: string[],
+    currentTeam: "team1" | "team2",
+    index: number
+  ) => {
     // Get all selected player IDs except current selection
-    const team1Selected = formData.team1Players.filter((_, i) => i !== (currentTeam === 'team1' ? index : -1));
-    const team2Selected = formData.team2Players.filter((_, i) => i !== (currentTeam === 'team2' ? index : -1));
-    
+    const team1Selected = formData.team1Players.filter(
+      (_, i) => i !== (currentTeam === "team1" ? index : -1)
+    );
+    const team2Selected = formData.team2Players.filter(
+      (_, i) => i !== (currentTeam === "team2" ? index : -1)
+    );
+
     // Combine all IDs to exclude
     const allExcluded = [...team1Selected, ...team2Selected];
-  
+
     return availablePlayers
-      .map(player => ({
+      .map((player) => ({
         value: player.id,
         label: player.name,
-        disabled: allExcluded.includes(player.id)
+        disabled: allExcluded.includes(player.id),
       }))
-      .filter(option => !excludeIds.includes(option.value));
+      .filter((option) => !excludeIds.includes(option.value));
   };
-    
 
   return (
     <div className="min-h-screen pb-20">
@@ -251,7 +305,7 @@ const Matches = () => {
 
         {/* Add Match Dialog */}
         <Dialog open={showAddForm} onClose={() => setShowAddForm(false)}>
-          <DialogContent className='overflow-visible'>
+          <DialogContent className="overflow-visible">
             <h2 className="text-xl font-bold mb-4">Schedule New Match</h2>
             <form onSubmit={handleAddMatch} className="space-y-4">
               {/* Date Picker */}
@@ -296,18 +350,13 @@ const Matches = () => {
 
               {/* Team Selection */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Team 1 */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Team 1
                   </label>
-                  {[0, 1].map((index) => {
-                    const selectedPlayer = players.find(
-                      (p) => p.id === formData.team1Players[index]
-                    );
-                    return (
+                  {[0, 1].map((index) => (
+                    <div key={`team1-${index}`} className="space-y-1">
                       <Select
-                        key={`team1-${index}`}
                         value={formData.team1Players[index]}
                         onChange={(value) => {
                           const newPlayers = [...formData.team1Players];
@@ -316,13 +365,26 @@ const Matches = () => {
                             ...prev,
                             team1Players: newPlayers as [string, string],
                           }));
+                          // Clear error when value is selected
+                          if (value) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              team1: prev.team1.map((err, i) =>
+                                i === index ? "" : err
+                              ),
+                            }));
+                          }
                         }}
                         options={getPlayerSelectOptions([], "team1", index)}
-                        placeholder={`Player ${index + 1}`}
-                        label={selectedPlayer?.name}
+                        placeholder={`Select Player ${index + 1}`}
                       />
-                    );
-                  })}
+                      {errors.team1[index] && (
+                        <p className="text-sm text-destructive mt-1">
+                          {errors.team1[index]}
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
                 {/* Team 2 */}
@@ -330,13 +392,9 @@ const Matches = () => {
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Team 2
                   </label>
-                  {[0, 1].map((index) => {
-                    const selectedPlayer = players.find(
-                      (p) => p.id === formData.team2Players[index]
-                    );
-                    return (
+                  {[0, 1].map((index) => (
+                    <div key={`team2-${index}`} className="space-y-1">
                       <Select
-                        key={`team2-${index}`}
                         value={formData.team2Players[index]}
                         onChange={(value) => {
                           const newPlayers = [...formData.team2Players];
@@ -345,13 +403,26 @@ const Matches = () => {
                             ...prev,
                             team2Players: newPlayers as [string, string],
                           }));
+                          // Clear error when value is selected
+                          if (value) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              team2: prev.team2.map((err, i) =>
+                                i === index ? "" : err
+                              ),
+                            }));
+                          }
                         }}
                         options={getPlayerSelectOptions([], "team2", index)}
-                        placeholder={`Player ${index + 1}`}
-                        label={selectedPlayer?.name}
+                        placeholder={`Select Player ${index + 1}`}
                       />
-                    );
-                  })}
+                      {errors.team2[index] && (
+                        <p className="text-sm text-destructive mt-1">
+                          {errors.team2[index]}
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
 

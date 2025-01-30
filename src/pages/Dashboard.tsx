@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import { 
   Line, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, BarChart, Bar 
@@ -9,8 +8,7 @@ import { getRecentMatches, getPlayers } from '../services/firebaseService';
 import { Card, CardContent } from '../components/ui/Card';
 import { Tabs } from '../components/ui/Tabs';
 import { 
-  Users, Calendar, Award, TrendingUp, 
-  ChevronRight, Trophy 
+  Users, Calendar, Award, TrendingUp, Trophy 
 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import FormattedDate from '../components/common/FormattedDate';
@@ -181,38 +179,23 @@ const MatchCard = ({ match, players }: { match: FirestoreMatch; players: Player[
 };
 
 const PlayerCard = ({ player }: { player: Player }) => (
-  <Link to={`/players/${player.id}`} className="block">
-    <Card className="bg-card/50 backdrop-blur-lg border-border/50 hover:bg-card/70 transition-colors">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-lg font-medium">{player.name[0]}</span>
-          </div>
-          <div className="flex-grow">
-            <p className="font-medium">{player.name}</p>
-            <div className="flex gap-2 mt-2">
-              {player.stats ? (
-                <>
-                  <Badge variant="info" className="text-xs">
-                    {player.stats.wins} Wins
-                  </Badge>
-                  <Badge variant="primary" className="text-xs">
-                    {player.stats.totalGames} Games
-                  </Badge>
-                  <Badge variant="primary" className="text-xs">
-                    {player.stats.winPercentage}% Win Rate
-                  </Badge>
-                </>
-              ) : (
-                <Badge variant="primary" className="text-xs">New Player</Badge>
-              )}
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+  <Card className="bg-card/50 backdrop-blur-lg border-border/50 transition-colors">
+    <CardContent className="p-4">
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <span className="text-lg font-medium">{player.name[0]}</span>
         </div>
-      </CardContent>
-    </Card>
-  </Link>
+        <div className="flex-grow">
+          <p className="font-medium">{player.name}</p>
+          <div className="flex gap-2 mt-2">
+            <Badge variant="primary" className="text-xs">
+              {player.availability?.status || 'Unknown'}
+            </Badge>
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
 );
 
 const Dashboard = () => {
@@ -320,65 +303,84 @@ const Dashboard = () => {
       setSelectedTimeframe: (value: string) => void;
       chartData: FirestoreMatch[];
       averageScore: number;
-    }) => (
-      <Card className="bg-card/50 backdrop-blur-lg">
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Match Performance</h2>
-            <select
-              value={selectedTimeframe}
-              onChange={(e) => setSelectedTimeframe(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-muted text-sm"
-            >
-              <option value="week">Last Week</option>
-              <option value="month">Last Month</option>
-            </select>
-          </div>
-          <div className="h-[300px] sm:h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData.map(match => ({
-                date: new Date(match.date.toDate()).toLocaleDateString(),
-                team1: match.teams.team1.score,
-                team2: match.teams.team2.score,
-                avgScore: (match.teams.team1.score + match.teams.team2.score) / 2
-              }))}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fontSize: 12 }}
-                  interval="preserveStartEnd"
-                />
-                <YAxis 
-                  tick={{ fontSize: 12 }}
-                  label={{ 
-                    value: 'Score', 
-                    angle: -90, 
-                    position: 'insideLeft',
-                    style: { fontSize: '12px' }
-                  }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    borderRadius: '8px',
-                    border: 'none',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                  }}
-                  labelStyle={{ fontWeight: 'bold' }}
-                />
-                <Bar name="Team 1" dataKey="team1" fill="var(--primary)" />
-                <Bar name="Team 2" dataKey="team2" fill="var(--secondary)" />
-                <Line
-                  name="Average"
-                  type="monotone"
-                  dataKey="avgScore"
-                  stroke="var(--muted-foreground)"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+    }) => {
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      
+      return (
+        <Card className="bg-card/50 backdrop-blur-lg">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">Match Performance</h2>
+              <select
+                value={selectedTimeframe}
+                onChange={(e) => setSelectedTimeframe(e.target.value)}
+                className="px-3 py-1.5 rounded-lg bg-muted text-sm"
+              >
+                <option value="week">Last Week</option>
+                <option value="month">Last Month</option>
+              </select>
+            </div>
+            <div className="h-[300px] sm:h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData.map(match => ({
+                  date: new Date(match.date.toDate()).toLocaleDateString(),
+                  team1: match.teams.team1.score,
+                  team2: match.teams.team2.score,
+                  avgScore: (match.teams.team1.score + match.teams.team2.score) / 2
+                }))}>
+                  <CartesianGrid 
+                    strokeDasharray="3 3" 
+                    stroke={isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} 
+                  />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12, fill: isDarkMode ? '#fff' : '#000' }}
+                    stroke={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: isDarkMode ? '#fff' : '#000' }}
+                    stroke={isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}
+                    label={{ 
+                      value: 'Score', 
+                      angle: -90, 
+                      position: 'insideLeft',
+                      style: { 
+                        fontSize: '12px',
+                        fill: isDarkMode ? '#fff' : '#000'
+                      }
+                    }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                      borderRadius: '8px',
+                      border: 'none',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      color: isDarkMode ? '#fff' : '#000'
+                    }}
+                    labelStyle={{ fontWeight: 'bold' }}
+                  />
+                  <Bar 
+                    name="Team 1" 
+                    dataKey="team1" 
+                    fill={isDarkMode ? 'hsl(217.2, 91.2%, 59.8%)' : 'hsl(221.2, 83.2%, 53.3%)'} 
+                  />
+                  <Bar 
+                    name="Team 2" 
+                    dataKey="team2" 
+                    fill={isDarkMode ? 'hsl(217.2, 32.6%, 17.5%)' : 'hsl(210, 40%, 96.1%)'} 
+                  />
+                  <Line
+                    name="Average"
+                    type="monotone"
+                    dataKey="avgScore"
+                    stroke={isDarkMode ? '#fff' : '#000'}
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-muted-foreground">
             <div className="text-center p-3 bg-muted/10 rounded-lg">
               <p className="font-medium">Highest Score</p>
@@ -401,9 +403,10 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    );
+          </CardContent>
+        </Card>
+      );
+    };
     
     // Recent Matches Tab Content Component
     const RecentMatches = ({ matches, players }: { matches: FirestoreMatch[]; players: Player[] }) => (
@@ -432,30 +435,30 @@ const Dashboard = () => {
     );
     
     // Available Players Tab Content Component
-    const AvailablePlayers = ({ players }: { players: Player[] }) => (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {players.map((player, index) => (
-          <motion.div
-            key={player.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <PlayerCard player={player} />
-          </motion.div>
-        ))}
-        {players.length === 0 && (
-          <Card className="bg-card/50 backdrop-blur-lg col-span-2">
-            <CardContent className="p-8 text-center text-muted-foreground">
-              <div className="flex flex-col items-center gap-2">
-                <Users className="w-12 h-12 text-muted-foreground/50" />
-                <p>No active players at the moment</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    );
+    // const AvailablePlayers = ({ players }: { players: Player[] }) => (
+    //   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    //     {players.map((player, index) => (
+    //       <motion.div
+    //         key={player.id}
+    //         initial={{ opacity: 0, y: 20 }}
+    //         animate={{ opacity: 1, y: 0 }}
+    //         transition={{ delay: index * 0.1 }}
+    //       >
+    //         <PlayerCard player={player} />
+    //       </motion.div>
+    //     ))}
+    //     {players.length === 0 && (
+    //       <Card className="bg-card/50 backdrop-blur-lg col-span-2">
+    //         <CardContent className="p-8 text-center text-muted-foreground">
+    //           <div className="flex flex-col items-center gap-2">
+    //             <Users className="w-12 h-12 text-muted-foreground/50" />
+    //             <p>No active players at the moment</p>
+    //           </div>
+    //         </CardContent>
+    //       </Card>
+    //     )}
+    //   </div>
+    // );
     
     // Usage in Dashboard Component
     const tabsData = [
@@ -500,15 +503,34 @@ const Dashboard = () => {
           </div>
         ),
         content: (
-          <AvailablePlayers 
-            players={activePlayers}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {activePlayers.map((player, index) => (
+              <motion.div
+                key={player.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <PlayerCard player={player} />
+              </motion.div>
+            ))}
+            {activePlayers.length === 0 && (
+              <Card className="bg-card/50 backdrop-blur-lg col-span-2">
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  <div className="flex flex-col items-center gap-2">
+                    <Users className="w-12 h-12 text-muted-foreground/50" />
+                    <p>No active players at the moment</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         ),
       },
     ];
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
+    <div className="container mx-auto px-4">
       {/* Animated Background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
