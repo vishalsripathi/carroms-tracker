@@ -38,3 +38,5 @@ coverage/
 *.tmp
 
 apphosting.local.yaml
+
+*storybook.log
