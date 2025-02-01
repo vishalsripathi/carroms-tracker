@@ -1,127 +1,57 @@
 // src/services/emailService.ts
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { app } from './firebase'; 
+import { Resend } from 'resend';
 
-export type EmailTemplate = 
-  | 'match-scheduled'
-  | 'match-rescheduled'
-  | 'match-cancelled'
-  | 'match-reminder'
-  | 'match-completed';
+const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY);
 
-interface EmailData {
-  template: EmailTemplate;
-  recipients: string[];
-  data: Record<string, any>;
-}
-
-export class EmailService {
-  private static instance: EmailService;
-  private functions;
-  
-  private constructor() {
-    this.functions = getFunctions(app);
+export const testEmailService = async () => {
+  try {
+    const data = await resend.emails.send({
+      from: import.meta.env.VITE_RESEND_FROM_EMAIL!,
+      to: 'sripathivishalreddy@gmail.com',
+      subject: 'Test Email from Carrom Tracker',
+      html: `
+        <div style="background-color: #1e293b; color: #f8fafc; padding: 20px; border-radius: 8px;">
+          <h1 style="color: #60a5fa;">Carrom Tracker</h1>
+          <p>This is a test email to verify the email service integration.</p>
+          <p style="color: #94a3b8;">Sent at: ${new Date().toLocaleString()}</p>
+        </div>
+      `
+    });
+    console.log('Test email sent successfully:', data);
+    return true;
+  } catch (error) {
+    console.error('Test email failed:', error);
+    return false;
   }
+};
 
-  static getInstance(): EmailService {
-    if (!EmailService.instance) {
-      EmailService.instance = new EmailService();
-    }
-    return EmailService.instance;
-  }
-
-  async sendEmail(emailData: EmailData): Promise<void> {
+export const emailService = {
+  async sendTestEmail() {
     try {
-      const sendEmail = httpsCallable(this.functions, 'sendEmail');
-      await sendEmail(emailData);
+      const response = await fetch('https://carrom-tracker.netlify.app/.netlify/functions/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: 'sripathivishalreddy@gmail.com',
+          subject: 'Test Email from Carrom Tracker',
+          html: `
+            <div style="background-color: #1e293b; color: #f8fafc; padding: 20px; border-radius: 8px;">
+              <h1 style="color: #60a5fa;">Carrom Tracker</h1>
+              <p>This is a test email to verify the email service integration.</p>
+              <p style="color: #94a3b8;">Sent at: ${new Date().toLocaleString()}</p>
+            </div>
+          `
+        })
+      });
+
+      const data = await response.json();
+      console.log('Email response:', data);
+      return data;
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Failed to send email:', error);
       throw error;
     }
   }
-
-  async sendMatchScheduledNotification(matchId: string, players: string[], date: Date) {
-    await this.sendEmail({
-      template: 'match-scheduled',
-      recipients: players,
-      data: {
-        matchId,
-        date: date.toISOString(),
-      }
-    });
-  }
-
-  async sendMatchRescheduledNotification(
-    matchId: string,
-    players: string[],
-    oldDate: Date,
-    newDate: Date
-  ) {
-    await this.sendEmail({
-      template: 'match-rescheduled',
-      recipients: players,
-      data: {
-        matchId,
-        oldDate: oldDate.toISOString(),
-        newDate: newDate.toISOString(),
-      }
-    });
-  }
-
-  async sendMatchCancelledNotification(
-    matchId: string,
-    players: string[],
-    reason?: string
-  ) {
-    await this.sendEmail({
-      template: 'match-cancelled',
-      recipients: players,
-      data: {
-        matchId,
-        reason,
-      }
-    });
-  }
-
-  async sendMatchReminder(matchId: string, players: string[], date: Date) {
-    await this.sendEmail({
-      template: 'match-reminder',
-      recipients: players,
-      data: {
-        matchId,
-        date: date.toISOString(),
-      }
-    });
-  }
-
-  async testEmailService() {
-    try {
-      await emailService.sendMatchScheduledNotification(
-        'test-match-id',
-        ['vishalreddy861@gmail.com'],
-        new Date()
-      );
-      console.log('Test email sent successfully');
-    } catch (error) {
-      console.error('Test email failed:', error);
-    }
-  }
-
-  async sendMatchCompletedNotification(
-    matchId: string,
-    players: string[],
-    scores: { team1: number; team2: number }
-  ) {
-    await this.sendEmail({
-      template: 'match-completed',
-      recipients: players,
-      data: {
-        matchId,
-        scores,
-      }
-    });
-  }
-  
-}
-
-export const emailService = EmailService.getInstance();
+};

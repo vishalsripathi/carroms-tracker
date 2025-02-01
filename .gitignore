@@ -40,3 +40,6 @@ coverage/
 apphosting.local.yaml
 
 *storybook.log
+
+# Local Netlify folder
+.netlify
