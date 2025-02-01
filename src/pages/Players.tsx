@@ -25,6 +25,7 @@ import { Select } from "../components/ui/Select/Select";
 import { Avatar } from "../components/ui/Avatar";
 import { Badge } from "../components/ui/Badge";
 import { UserPlus, Trophy, Users, ChartLine, Star } from "lucide-react";
+import { emailService } from "../services/emailService";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -182,7 +183,7 @@ const Players = () => {
         createdAt: timestamp,
       };
 
-      const docRef = await addDoc(collection(db, "players"), firestorePlayer);
+      const docRef = await addDoc(collection(db, 'players'), firestorePlayer);
 
       const statePlayer: Player = {
         ...firestorePlayer,
@@ -194,17 +195,24 @@ const Players = () => {
         createdAt: timestamp.toDate(),
       };
 
+      // Send welcome email
+      try {
+        await emailService.sendPlayerCreatedEmail(statePlayer);
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't block the player creation if email fails
+      }
+
       setPlayers((prevPlayers) => [...prevPlayers, statePlayer]);
       setShowAddForm(false);
       setFormData({ name: "", email: "", availability: "available" });
     } catch (err) {
-      setError("Failed to add player");
+      setError('Failed to add player');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
-
   const handleUpdateAvailability = async (
     playerId: string,
     status: "available" | "unavailable"

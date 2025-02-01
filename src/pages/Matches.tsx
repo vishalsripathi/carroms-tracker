@@ -27,6 +27,7 @@ import { Match, Player } from "../types";
 import { Select } from "../components/ui/Select/Select";
 import { Calendar } from "../components/ui/Calendar/Calendar";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner/LoadingSpinner";
+import { emailService } from "../services/emailService";
 
 interface MatchFormData {
   date: Date;
@@ -160,7 +161,47 @@ const Matches = () => {
         ],
       };
 
-      await addDoc(collection(db, "matches"), newMatch);
+      const docRef = await addDoc(collection(db, 'matches'), newMatch);
+      
+      // Send match scheduled email
+      try {
+        // Get all player emails for both teams
+        const allPlayerIds = [...formData.team1Players, ...formData.team2Players];
+        const playerEmails = players
+          .filter(player => allPlayerIds.includes(player.id))
+          .map(player => player.email);
+
+        // Create match object with proper date
+        const matchForEmail: Match = {
+          id: docRef.id,
+          date: formData.date,
+          createdByName: user.displayName || 'Unknown User',
+          createdBy: user.uid,
+          teams: {
+            team1: { ...newMatch.teams.team1 },
+            team2: { ...newMatch.teams.team2 }
+          },
+          status: "scheduled",
+          winner: null,
+          createdAt: newMatch.createdAt.toDate(),
+          updatedAt: newMatch.updatedAt.toDate(),
+          history: [
+            {
+              type: "creation",
+              timestamp: newMatch.createdAt, // Using FirebaseTimestamp directly
+              userId: user.uid,
+              userName: user.displayName || 'Unknown User',
+              data: {}
+            }
+          ]
+        };
+
+        await emailService.sendMatchScheduledEmail(matchForEmail, playerEmails);
+      } catch (emailError) {
+        console.error('Failed to send match scheduled email:', emailError);
+        // Don't block the match creation if email fails
+      }
+
       await fetchData();
       setShowAddForm(false);
       // Reset form data
@@ -174,7 +215,7 @@ const Matches = () => {
       console.error(err);
     } finally {
       setLoading(false);
-    }
+    };
   };
 
   const getPlayerName = (playerId: string) => {

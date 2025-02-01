@@ -1,14 +1,18 @@
 // types/match.ts
+import { Timestamp } from 'firebase/firestore';
+
+export type FirebaseTimestamp = Timestamp;
+
 export interface Team {
   players: [string, string]; // player IDs
   score: number;
 }
 
-export interface FirebaseTimestamp {
-  getTime: any;
-  seconds: number;
-  nanoseconds: number;
-}
+// export interface FirebaseTimestamp {
+//   getTime: any;
+//   seconds: number;
+//   nanoseconds: number;
+// }
 
 export interface MatchHistoryEvent {
   userId: string;

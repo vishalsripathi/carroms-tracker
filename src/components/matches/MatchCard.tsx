@@ -20,6 +20,7 @@ import MatchComments from './MatchComments';
 import SubstitutionModal from './SubstitutionModal';
 import { AlertDialog } from '../ui/AlertDialog/AlertDialog';
 import { LoadingSpinner } from '../ui/LoadingSpinner/LoadingSpinner';
+import { emailService } from '../../services/emailService';
 
 interface MatchCardProps {
   match: Match;
@@ -92,6 +93,47 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onUpdate, getPlayerName })
     try {
       setLoading(true);
       await matchService.completeMatch(match.id, scores, user.uid);
+
+      // Send match completed email
+      try {
+        // Get all player emails for both teams
+        const allPlayerIds = [
+          ...match.teams.team1.players,
+          ...match.teams.team2.players
+        ];
+        const playerEmails = allPlayerIds
+          .map(id => getPlayerName(id))
+          .filter(Boolean);
+
+        // Create updated match object with final scores
+        const completedMatch: Match = {
+          ...match,
+          teams: {
+            team1: {
+              ...match.teams.team1,
+              score: scores.team1Score
+            },
+            team2: {
+              ...match.teams.team2,
+              score: scores.team2Score
+            }
+          },
+          history: match.history.map(event => ({
+            ...event,
+            timestamp: event.timestamp  // Keep the FirebaseTimestamp
+          })),
+          createdAt: match.createdAt instanceof Date ? match.createdAt : new Date(match.createdAt),
+          updatedAt: match.updatedAt instanceof Date ? match.updatedAt : new Date(match.updatedAt),
+          winner: scores.team1Score > scores.team2Score ? 'team1' : 'team2',
+          status: 'completed'
+        };
+
+        await emailService.sendMatchCompletedEmail(completedMatch, playerEmails);
+      } catch (emailError) {
+        console.error('Failed to send match completion email:', emailError);
+        // Don't block the match completion if email fails
+      }
+
       setShowConfirmComplete(false);
       onUpdate();
     } catch (err) {
@@ -118,24 +160,53 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onUpdate, getPlayerName })
     }
 };
 
-  const handleReschedule = async () => {
-    if (!user) return;
+const handleReschedule = async () => {
+  if (!user) return;
+  try {
+    setLoading(true);
+    const oldDate = match.date;
+    await matchService.rescheduleMatch(
+      match.id,
+      new Date(newDate),
+      user.uid,
+      user.displayName || 'Unknown User'
+    );
+
+    // Send rescheduling email
     try {
-      setLoading(true);
-      await matchService.rescheduleMatch(
-        match.id,
-        new Date(newDate),
-        user.uid,
-        user.displayName || 'Unknown User'
+      // Get all player emails for both teams
+      const allPlayerIds = [
+        ...match.teams.team1.players,
+        ...match.teams.team2.players
+      ];
+      const playerEmails = allPlayerIds
+        .map(id => getPlayerName(id))
+        .filter(Boolean);
+
+      // Create updated match object
+      const updatedMatch = {
+        ...match,
+        date: new Date(newDate)
+      };
+
+      await emailService.sendMatchRescheduledEmail(
+        updatedMatch,
+        oldDate,
+        playerEmails
       );
-      setShowReschedule(false);
-      onUpdate();
-    } catch (err) {
-      handleError(err);
-    } finally {
-      setLoading(false);
+    } catch (emailError) {
+      console.error('Failed to send reschedule email:', emailError);
+      // Don't block the rescheduling if email fails
     }
-  };
+
+    setShowReschedule(false);
+    onUpdate();
+  } catch (err) {
+    handleError(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleDelete = async () => {
     if (!user) return;
