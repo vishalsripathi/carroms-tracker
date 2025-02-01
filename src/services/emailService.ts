@@ -1,29 +1,4 @@
 // src/services/emailService.ts
-import { Resend } from 'resend';
-
-const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY);
-
-export const testEmailService = async () => {
-  try {
-    const data = await resend.emails.send({
-      from: import.meta.env.VITE_RESEND_FROM_EMAIL!,
-      to: 'sripathivishalreddy@gmail.com',
-      subject: 'Test Email from Carrom Tracker',
-      html: `
-        <div style="background-color: #1e293b; color: #f8fafc; padding: 20px; border-radius: 8px;">
-          <h1 style="color: #60a5fa;">Carrom Tracker</h1>
-          <p>This is a test email to verify the email service integration.</p>
-          <p style="color: #94a3b8;">Sent at: ${new Date().toLocaleString()}</p>
-        </div>
-      `
-    });
-    console.log('Test email sent successfully:', data);
-    return true;
-  } catch (error) {
-    console.error('Test email failed:', error);
-    return false;
-  }
-};
 
 export const emailService = {
   async sendTestEmail() {
