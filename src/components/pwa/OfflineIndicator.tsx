@@ -23,7 +23,7 @@ const OfflineIndicator = () => {
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -50 }}
-          className="fixed top-0 left-0 right-0 bg-background text-foreground px-4 py-2 flex items-center justify-center z-50"
+          className="fixed top-0 left-0 right-0 bg-background text-foreground px-4 py-2 flex items-center justify-center z-50 pt-safe"
         >
           <WifiOff className="h-4 w-4 mr-2" />
           <span className="text-sm font-medium">
