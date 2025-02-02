@@ -14,7 +14,7 @@ interface EmailData {
 }
 
 class EmailService {
-  private readonly API_ENDPOINT = 'https://carrom-tracker.netlify.app/.netlify/functions/send-email';
+  private readonly API_ENDPOINT = 'https://carrom-tracker.vishalsripathi.in/.netlify/functions/send-email';
 
   private async sendEmail(emailData: EmailData) {
     try {
@@ -23,9 +23,14 @@ class EmailService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(emailData)
       });
-
+  
       const data = await response.json();
-      console.log('Email sent:', data);
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send email');
+      }
+  
+      console.log('Email sent successfully:', data);
       return data;
     } catch (error) {
       console.error('Failed to send email:', error);
@@ -79,7 +84,7 @@ class EmailService {
                 <p>Your player profile has been successfully created.</p>
                 <p><strong>Email:</strong> ${data.email}</p>
                 <p><strong>Status:</strong> ${data.availability}</p>
-                <a href="https://carrom-tracker.netlify.app/" class="button" 
+                <a href="https://carrom-tracker.vishalsripathi.in/" class="button" 
                    style="background-color: #3b82f6; color: white;">
                   View Profile
                 </a>
@@ -108,7 +113,7 @@ class EmailService {
                   <p><strong>Team 1:</strong> ${data.team1Players.join(' & ')}</p>
                   <p><strong>Team 2:</strong> ${data.team2Players.join(' & ')}</p>
                 </div>
-                <a href="https://carrom-tracker.netlify.app/matches" class="button" 
+                <a href="https://carrom-tracker.vishalsripathi.in/matches" class="button" 
                    style="background-color: #3b82f6; color: white;">
                   View Match Details
                 </a>
@@ -138,7 +143,7 @@ class EmailService {
                   <p><strong>Team 1:</strong> ${data.team1Players.join(' & ')}</p>
                   <p><strong>Team 2:</strong> ${data.team2Players.join(' & ')}</p>
                 </div>
-                <a href="https://carrom-tracker.netlify.app/matches" class="button" 
+                <a href="https://carrom-tracker.vishalsripathi.in/matches" class="button" 
                    style="background-color: #3b82f6; color: white;">
                   View Match Details
                 </a>
@@ -171,7 +176,7 @@ class EmailService {
                     Winner: Team ${data.winner === 'team1' ? '1' : '2'} 🎉
                   </p>
                 </div>
-                <a href="https://carrom-tracker.netlify.app/matches" class="button" 
+                <a href="https://carrom-tracker.vishalsripathi.in/matches" class="button" 
                    style="background-color: #3b82f6; color: white;">
                   View Match Details
                 </a>

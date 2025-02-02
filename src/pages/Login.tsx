@@ -6,7 +6,6 @@ import { Card, CardContent } from '../components/ui/Card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogIn } from 'lucide-react';
 import { Toast } from '../components/ui/Toast/Toast';
-import { emailService } from '../services/emailService';
 
 const FloatingShape = ({ delay = 0, className = "" }) => (
   <motion.div
@@ -175,14 +174,6 @@ const Login = () => {
                     whileHover={{ scale: 1.1 }}
                     transition={{ duration: 0.3 }}
                   />
-                </Button>
-
-                <Button
-                  onClick={() => emailService.sendTestEmail()}
-                  variant="outline"
-                  size="sm"
-                >
-                  Test Email
                 </Button>
               </motion.div>
             </motion.div>
