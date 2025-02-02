@@ -100,7 +100,9 @@ const Layout = () => {
           )}
         </AnimatePresence>
 
-        <main className="flex-1 overflow-y-auto px-4 py-8">
+        <main className="flex-1 overflow-y-auto px-4 py-8 md:py-8" style={{ 
+          paddingTop: 'calc(env(safe-area-inset-top, 16px) + 2rem)'
+        }}>
           <Outlet />
         </main>
       </div>
