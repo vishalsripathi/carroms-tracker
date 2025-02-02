@@ -41,83 +41,79 @@ class EmailService {
 
   // Base styles for all emails
   private readonly baseStyles = `
-    /* Light mode styles */
-    :root {
-      --background: #ffffff;
-      --card: #f1f5f9;
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --primary: #4f46e5;
-      --primary-light: #6366f1;
-      --border: #e2e8f0;
-      --success: #22c55e;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-    }
-
-    /* Dark mode styles */
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --background: #0f172a;
-        --card: #1e293b;
-        --text-primary: #f8fafc;
-        --text-secondary: #94a3b8;
-        --primary: #818cf8;
-        --primary-light: #a5b4fc;
-        --border: #334155;
-        --success: #4ade80;
-        --warning: #fbbf24;
-        --danger: #f87171;
-      }
-    }
-
     body {
       margin: 0;
       padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--background);
-      color: var(--text-primary);
+      background-color: #f8fafc;
+      color: #1e293b;
     }
 
     .container {
       max-width: 600px;
       margin: 24px auto;
+      background-color: #1e293b;
       border-radius: 12px;
       overflow: hidden;
-      background-color: var(--card);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      color: #f8fafc;
     }
 
     .header {
-      background-color: var(--primary);
+      background-color: #4f46e5;
       padding: 24px;
       text-align: center;
-      color: #ffffff;
     }
 
     .logo {
       font-size: 24px;
       font-weight: bold;
       margin: 0;
-      letter-spacing: -0.025em;
+      color: #ffffff;
     }
 
     .content {
       padding: 24px;
-      color: var(--text-primary);
     }
 
-    .card {
-      background-color: var(--background);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px;
+    .greeting {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-align: center;
+      color: #f8fafc;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
       margin: 16px 0;
+      background-color: #2e3b4e;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th {
+      background-color: #374151;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    td {
+      padding: 12px;
+      border-top: 1px solid #4b5563;
+      color: #f8fafc;
+    }
+
+    .highlight {
+      color: #818cf8;
+      font-weight: 600;
     }
 
     .button {
       display: inline-block;
-      background-color: var(--primary);
+      background-color: #4f46e5;
       color: #ffffff;
       padding: 12px 24px;
       border-radius: 6px;
@@ -125,132 +121,31 @@ class EmailService {
       font-weight: 500;
       margin: 16px 0;
       text-align: center;
-      transition: background-color 0.2s;
     }
 
-    .button:hover {
-      background-color: var(--primary-light);
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin: 16px 0;
-    }
-
-    .stat-card {
-      background-color: var(--background);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px;
-      text-align: center;
-    }
-
-    .stat-value {
-      font-size: 24px;
-      font-weight: bold;
-      color: var(--primary);
-      margin: 8px 0;
-    }
-
-    .stat-label {
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 9999px;
-      font-size: 12px;
-      font-weight: 500;
-      text-transform: uppercase;
-    }
-
-    .badge-success {
-      background-color: var(--success);
-      color: #ffffff;
-    }
-
-    .badge-warning {
-      background-color: var(--warning);
-      color: #ffffff;
-    }
-
-    .divider {
-      height: 1px;
-      background-color: var(--border);
+    .message {
       margin: 24px 0;
+      text-align: center;
+      color: #94a3b8;
     }
 
     .footer {
       padding: 24px;
       text-align: center;
       font-size: 14px;
-      color: var(--text-secondary);
-      border-top: 1px solid var(--border);
-    }
-
-    .footer a {
-      color: var(--primary);
-      text-decoration: none;
-    }
-
-    .avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background-color: var(--primary);
-      color: #ffffff;
-      font-size: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 16px;
-    }
-
-    .team-score {
-      font-size: 32px;
-      font-weight: bold;
-      color: var(--primary);
-      text-align: center;
-      margin: 16px 0;
-    }
-
-    .winner-badge {
-      background-color: var(--success);
-      color: #ffffff;
-      padding: 8px 16px;
-      border-radius: 9999px;
-      font-weight: 500;
-      text-align: center;
-      margin: 16px auto;
-      display: inline-block;
-    }
-
-    .player-name {
-      font-weight: 500;
-      color: var(--text-primary);
+      color: #94a3b8;
+      border-top: 1px solid #374151;
     }
   `;
 
-  private getEmailTemplate(templateName: string, data: any): EmailTemplate {
-    const commonFooter = `
-      <div class="footer">
-        <p>
-          Questions or concerns? Contact us at 
-          <a href="mailto:${this.SUPPORT_EMAIL}">${this.SUPPORT_EMAIL}</a>
-        </p>
-        <p>© ${new Date().getFullYear()} Carrom Tracker. All rights reserved.</p>
-        <p>
-          <a href="${this.APP_URL}/settings/notifications">Email Preferences</a> •
-          <a href="${this.APP_URL}/privacy">Privacy Policy</a> •
-          <a href="${this.APP_URL}/terms">Terms of Service</a>
-        </p>
-      </div>
-    `;
+  private readonly commonFooter = `
+    <div class="footer">
+      <p>Questions or concerns? Contact us at <a href="mailto:${this.SUPPORT_EMAIL}" style="color: #818cf8;">${this.SUPPORT_EMAIL}</a></p>
+      <p>© ${new Date().getFullYear()} Carrom Tracker. All rights reserved.</p>
+    </div>
+  `;
 
+  private getEmailTemplate(templateName: string, data: any): EmailTemplate {
     switch (templateName) {
       case 'playerCreated':
         return {
@@ -293,7 +188,7 @@ class EmailService {
                   </a>
                 </div>
               </div>
-              ${commonFooter}
+              ${this.commonFooter}
             </div>
           `
         };
@@ -308,29 +203,30 @@ class EmailService {
                 <h1 class="logo">🎯 Carrom Tracker</h1>
               </div>
               <div class="content">
-                <h2 style="text-align: center;">New Match Scheduled! 🎯</h2>
-                
-                <div class="card">
-                  <div style="text-align: center;">
-                    <div class="badge badge-success" style="margin-bottom: 16px;">
-                      ${new Date(data.date).toLocaleDateString()} at ${new Date(data.date).toLocaleTimeString()}
-                    </div>
-                  </div>
+                <div class="greeting">
+                  Hey there! Get ready for an exciting match! 🎯
+                </div>
 
-                  <div class="stats">
-                    <div class="stat-card">
-                      <h3>Team 1</h3>
-                      ${data.team1Players.map(player => `
-                        <p class="player-name">${player}</p>
-                      `).join('')}
-                    </div>
-                    <div class="stat-card">
-                      <h3>Team 2</h3>
-                      ${data.team2Players.map(player => `
-                        <p class="player-name">${player}</p>
-                      `).join('')}
-                    </div>
-                  </div>
+                <table>
+                  <tr>
+                    <th colspan="2">Match Details</th>
+                  </tr>
+                  <tr>
+                    <td>Date & Time</td>
+                    <td class="highlight">${new Date(data.date).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td>Team 1</td>
+                    <td>${data.team1Players.join(' & ')}</td>
+                  </tr>
+                  <tr>
+                    <td>Team 2</td>
+                    <td>${data.team2Players.join(' & ')}</td>
+                  </tr>
+                </table>
+
+                <div class="message">
+                  Don't forget to warm up before the match! See you at the table! 🚀
                 </div>
 
                 <div style="text-align: center;">
@@ -338,21 +234,65 @@ class EmailService {
                     View Match Details
                   </a>
                 </div>
-
-                <div class="card" style="margin-top: 24px;">
-                  <h3>Match Details</h3>
-                  <ul style="padding-left: 20px;">
-                    <li>Arrive 10 minutes before the match</li>
-                    <li>Bring your own striker if preferred</li>
-                    <li>Match duration: ~30 minutes</li>
-                    <li>First to 29 points wins</li>
-                  </ul>
-                </div>
               </div>
-              ${commonFooter}
+              ${this.commonFooter}
             </div>
           `
         };
+
+      case 'matchCompleted': {
+        const winningTeam = data.winner === 'team1' ? 1 : 2;
+        
+        return {
+          subject: `🏆 Match Results - Team ${winningTeam} Wins!`,
+          html: `
+            <style>${this.baseStyles}</style>
+            <div class="container">
+              <div class="header">
+                <h1 class="logo">🎯 Carrom Tracker</h1>
+              </div>
+              <div class="content">
+                <div class="greeting">
+                  Match Complete! Team ${winningTeam} Takes the Win! 🏆
+                </div>
+
+                <table>
+                  <tr>
+                    <th colspan="2">Match Results</th>
+                  </tr>
+                  <tr>
+                    <td>Team 1 Score</td>
+                    <td class="highlight">${data.team1Score}</td>
+                  </tr>
+                  <tr>
+                    <td>Team 2 Score</td>
+                    <td class="highlight">${data.team2Score}</td>
+                  </tr>
+                  <tr>
+                    <td>Team 1 Players</td>
+                    <td>${data.team1Players.join(' & ')}</td>
+                  </tr>
+                  <tr>
+                    <td>Team 2 Players</td>
+                    <td>${data.team2Players.join(' & ')}</td>
+                  </tr>
+                </table>
+
+                <div class="message">
+                  Great game everyone! Check out the updated rankings and stats! 🎯
+                </div>
+
+                <div style="text-align: center;">
+                  <a href="${this.APP_URL}/matches" class="button">
+                    View Match Details
+                  </a>
+                </div>
+              </div>
+              ${this.commonFooter}
+            </div>
+          `
+        };
+      }
 
       case 'matchRescheduled':
         return {
@@ -364,176 +304,34 @@ class EmailService {
                 <h1 class="logo">🎯 Carrom Tracker</h1>
               </div>
               <div class="content">
-                <h2 style="text-align: center;">Match Rescheduled ⏰</h2>
-                
-                <div class="card">
-                  <div class="stats">
-                    <div class="stat-card">
-                      <h3>Previous Date</h3>
-                      <p class="badge badge-warning">
-                        ${new Date(data.oldDate).toLocaleDateString()} at ${new Date(data.oldDate).toLocaleTimeString()}
-                      </p>
-                    </div>
-                    <div class="stat-card">
-                      <h3>New Date</h3>
-                      <p class="badge badge-success">
-                        ${new Date(data.newDate).toLocaleDateString()} at ${new Date(data.newDate).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div class="divider"></div>
-
-                  <div class="stats">
-                    <div class="stat-card">
-                      <h3>Team 1</h3>
-                      ${data.team1Players.map(player => `
-                        <p class="player-name">${player}</p>
-                      `).join('')}
-                    </div>
-                    <div class="stat-card">
-                      <h3>Team 2</h3>
-                      ${data.team2Players.map(player => `
-                        <p class="player-name">${player}</p>
-                      `).join('')}
-                    </div>
-                  </div>
+                <div class="greeting">
+                  Important: Your Match Has Been Rescheduled! ⏰
                 </div>
 
-                <div style="text-align: center;">
-                  <a href="${this.APP_URL}/matches" class="button">
-                    View Updated Match Details
-                  </a>
-                </div>
-              </div>
-              ${commonFooter}
-            </div>
-          `
-        };
+                <table>
+                  <tr>
+                    <th colspan="2">Updated Schedule</th>
+                  </tr>
+                  <tr>
+                    <td>Previous Date</td>
+                    <td>${new Date(data.oldDate).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td>New Date</td>
+                    <td class="highlight">${new Date(data.newDate).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td>Team 1</td>
+                    <td>${data.team1Players.join(' & ')}</td>
+                  </tr>
+                  <tr>
+                    <td>Team 2</td>
+                    <td>${data.team2Players.join(' & ')}</td>
+                  </tr>
+                </table>
 
-      case 'matchCompleted': {
-        const winningTeam = data.winner === 'team1' ? 1 : 2;
-        const winningScore = data.winner === 'team1' ? data.team1Score : data.team2Score;
-        const losingScore = data.winner === 'team1' ? data.team2Score : data.team1Score;
-
-        return {
-          subject: `🏆 Match Results - Team ${winningTeam} Wins!`,
-          html: `
-            <style>${this.baseStyles}</style>
-            <div class="container">
-              <div class="header">
-                <h1 class="logo">🎯 Carrom Tracker</h1>
-              </div>
-              <div class="content">
-                <h2 style="text-align: center;">Match Results 🏆</h2>
-                
-                <div class="card">
-                  <div class="winner-badge">
-                    Team ${winningTeam} Wins! 🎉
-                  </div>
-
-                  <div class="team-score">
-                    ${data.team1Score} - ${data.team2Score}
-                  </div>
-
-                  <div class="stats">
-                    <div class="stat-card">
-                      <h3>Team 1</h3>
-                      ${data.team1Players.map(player => `
-                        <p class="player-name">${player}</p>
-                      `).join('')}
-                      <div class="stat-value">${data.team1Score}</div>
-                      <div class="stat-label">Points Scored</div>
-                    </div>
-                    <div class="stat-card">
-                      <h3>Team 2</h3>
-                      ${data.team2Players.map(player => `
-                        <p class="player-name">${player}</p>
-                      `).join('')}
-                      <div class="stat-value">${data.team2Score}</div>
-                      <div class="stat-label">Points Scored</div>
-                    </div>
-                  </div>
-
-                  <div class="divider"></div>
-
-                  <div class="card" style="margin-top: 24px;">
-                    <h3>Match Highlights</h3>
-                    <div class="stats">
-                      <div class="stat-card">
-                        <div class="stat-value">${winningScore}</div>
-                        <div class="stat-label">Winning Score</div>
-                      </div>
-                      <div class="stat-card">
-                        <div class="stat-value">${losingScore}</div>
-                        <div class="stat-label">Losing Score</div>
-                      </div>
-                      <div class="stat-card">
-                        <div class="stat-value">${Math.abs(data.team1Score - data.team2Score)}</div>
-                        <div class="stat-label">Point Difference</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style="text-align: center; margin-top: 24px;">
-                    <a href="${this.APP_URL}/matches" class="button">
-                      View Match Details
-                    </a>
-                  </div>
-                </div>
-              </div>
-              ${commonFooter}
-            </div>
-          `
-        };
-      }
-
-      case 'matchReminder':
-        return {
-          subject: '⏰ Match Reminder - Starting Soon!',
-          html: `
-            <style>${this.baseStyles}</style>
-            <div class="container">
-              <div class="header">
-                <h1 class="logo">🎯 Carrom Tracker</h1>
-              </div>
-              <div class="content">
-                <h2 style="text-align: center;">Your Match Starts Soon! ⏰</h2>
-                
-                <div class="card">
-                  <div style="text-align: center;">
-                    <div class="badge badge-warning" style="margin-bottom: 16px;">
-                      Starting in 30 minutes
-                    </div>
-                    <p style="font-size: 18px; margin: 16px 0;">
-                      ${new Date(data.date).toLocaleDateString()} at ${new Date(data.date).toLocaleTimeString()}
-                    </p>
-                  </div>
-
-                  <div class="stats">
-                    <div class="stat-card">
-                      <h3>Team 1</h3>
-                      ${data.team1Players.map(player => `
-                        <p class="player-name">${player}</p>
-                      `).join('')}
-                    </div>
-                    <div class="stat-card">
-                      <h3>Team 2</h3>
-                      ${data.team2Players.map(player => `
-                        <p class="player-name">${player}</p>
-                      `).join('')}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="card" style="margin-top: 24px;">
-                  <h3>Quick Reminders</h3>
-                  <ul style="padding-left: 20px;">
-                    <li>Arrive 10 minutes early for warm-up</li>
-                    <li>Bring your striker (if preferred)</li>
-                    <li>Check your equipment</li>
-                    <li>Stay hydrated!</li>
-                  </ul>
+                <div class="message">
+                  Please update your calendar with the new match time! 📅
                 </div>
 
                 <div style="text-align: center;">
@@ -542,111 +340,7 @@ class EmailService {
                   </a>
                 </div>
               </div>
-              ${commonFooter}
-            </div>
-          `
-        };
-
-      case 'achievementUnlocked':
-        return {
-          subject: '🎉 New Achievement Unlocked!',
-          html: `
-            <style>${this.baseStyles}</style>
-            <div class="container">
-              <div class="header">
-                <h1 class="logo">🎯 Carrom Tracker</h1>
-              </div>
-              <div class="content">
-                <h2 style="text-align: center;">Achievement Unlocked! 🏆</h2>
-                
-                <div class="card" style="text-align: center;">
-                  <div class="avatar" style="font-size: 32px;">🏆</div>
-                  <h3>${data.achievementName}</h3>
-                  <p>${data.description}</p>
-                  
-                  <div class="badge badge-success" style="margin: 16px 0;">
-                    +${data.points} Points
-                  </div>
-                </div>
-
-                <div class="card" style="margin-top: 24px;">
-                  <div class="stats">
-                    <div class="stat-card">
-                      <div class="stat-value">${data.totalAchievements}</div>
-                      <div class="stat-label">Total Achievements</div>
-                    </div>
-                    <div class="stat-card">
-                      <div class="stat-value">${data.ranking}</div>
-                      <div class="stat-label">Current Ranking</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div style="text-align: center;">
-                  <a href="${this.APP_URL}/profile/achievements" class="button">
-                    View All Achievements
-                  </a>
-                </div>
-              </div>
-              ${commonFooter}
-            </div>
-          `
-        };
-
-      case 'weeklyStats':
-        return {
-          subject: '📊 Your Weekly Carrom Stats',
-          html: `
-            <style>${this.baseStyles}</style>
-            <div class="container">
-              <div class="header">
-                <h1 class="logo">🎯 Carrom Tracker</h1>
-              </div>
-              <div class="content">
-                <h2 style="text-align: center;">Weekly Performance Report 📊</h2>
-                
-                <div class="card">
-                  <div class="stats">
-                    <div class="stat-card">
-                      <div class="stat-value">${data.matchesPlayed}</div>
-                      <div class="stat-label">Matches Played</div>
-                    </div>
-                    <div class="stat-card">
-                      <div class="stat-value">${data.winRate}%</div>
-                      <div class="stat-label">Win Rate</div>
-                    </div>
-                  </div>
-
-                  <div class="divider"></div>
-
-                  <div class="stats">
-                    <div class="stat-card">
-                      <div class="stat-value">${data.avgScore}</div>
-                      <div class="stat-label">Average Score</div>
-                    </div>
-                    <div class="stat-card">
-                      <div class="stat-value">${data.highestScore}</div>
-                      <div class="stat-label">Highest Score</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="card" style="margin-top: 24px;">
-                  <h3>Performance Insights</h3>
-                  <ul style="padding-left: 20px;">
-                    ${data.insights.map(insight => `
-                      <li>${insight}</li>
-                    `).join('')}
-                  </ul>
-                </div>
-
-                <div style="text-align: center;">
-                  <a href="${this.APP_URL}/stats" class="button">
-                    View Detailed Stats
-                  </a>
-                </div>
-              </div>
-              ${commonFooter}
+              ${this.commonFooter}
             </div>
           `
         };
@@ -672,23 +366,6 @@ class EmailService {
 
   async sendMatchScheduledEmail(match: Match, recipients: string[]) {
     const template = this.getEmailTemplate('matchScheduled', {
-      date: match.date,
-      team1Players: match.teams.team1.players,
-      team2Players: match.teams.team2.players
-    });
-
-    return Promise.all(
-      recipients.map(recipient =>
-        this.sendEmail({
-          to: recipient,
-          ...template
-        })
-      )
-    );
-  }
-
-  async sendMatchReminderEmail(match: Match, recipients: string[]) {
-    const template = this.getEmailTemplate('matchReminder', {
       date: match.date,
       team1Players: match.teams.team1.players,
       team2Players: match.teams.team2.players
@@ -739,22 +416,6 @@ class EmailService {
         })
       )
     );
-  }
-
-  async sendAchievementEmail(achievement: any, recipient: string) {
-    const template = this.getEmailTemplate('achievementUnlocked', achievement);
-    return this.sendEmail({
-      to: recipient,
-      ...template
-    });
-  }
-
-  async sendWeeklyStatsEmail(stats: any, recipient: string) {
-    const template = this.getEmailTemplate('weeklyStats', stats);
-    return this.sendEmail({
-      to: recipient,
-      ...template
-    });
   }
 }
 
