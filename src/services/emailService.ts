@@ -149,7 +149,7 @@ class EmailService {
     switch (templateName) {
       case 'playerCreated':
         return {
-          subject: '🎯 Welcome to Carrom Tracker!',
+          subject: '🎉 Welcome to Carrom Tracker!',
           html: `
             <style>${this.baseStyles}</style>
             <div class="container">
@@ -193,7 +193,7 @@ class EmailService {
 
       case 'matchScheduled':
         return {
-          subject: '🎯 New Match Scheduled!',
+          subject: '📅 New Match Scheduled!',
           html: `
             <style>${this.baseStyles}</style>
             <div class="container">
@@ -202,7 +202,7 @@ class EmailService {
               </div>
               <div class="content">
                 <div class="greeting">
-                  Hey there! Get ready for an exciting match!, New Match Scheduled by ${data.createdByName} 🎯
+                  Hey there! Get ready for an exciting match!, New Match Scheduled by ${data.createdByName} 🎉
                 </div>
 
                 <table>
@@ -224,7 +224,7 @@ class EmailService {
                 </table>
 
                 <div class="message">
-                  Don't forget to warm up before the match! See you at the table! Good luck to all players! 🚀
+                  Don't forget to warm up before the match! See you at the table! Good luck to your team! 🚀
                 </div>
 
                 <div style="text-align: center;">

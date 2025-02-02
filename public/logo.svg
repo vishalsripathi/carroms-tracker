@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Impact rays behind everything -->
+  <g transform="translate(256, 256)">
+    <!-- Longer impact lines -->
+    <g stroke="#7dd3fc" stroke-linecap="round" opacity="0.6">
+      <path d="M-15 -15 L-30 -30">
+        <animate attributeName="opacity" values="0.6;0.8;0.6" dur="0.7s" repeatCount="indefinite"/>
+      </path>
+      <path d="M15 -15 L30 -30">
+        <animate attributeName="opacity" values="0.6;0.8;0.6" dur="0.7s" repeatCount="indefinite"/>
+      </path>
+      <path d="M-15 15 L-30 30">
+        <animate attributeName="opacity" values="0.6;0.8;0.6" dur="0.7s" repeatCount="indefinite"/>
+      </path>
+      <path d="M15 15 L30 30">
+        <animate attributeName="opacity" values="0.6;0.8;0.6" dur="0.7s" repeatCount="indefinite"/>
+      </path>
+    </g>
+    
+    <!-- Small particle effects -->
+    <g fill="#7dd3fc">
+      <circle cx="-25" cy="-25" r="3">
+        <animate attributeName="r" values="3;4;3" dur="0.5s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="25" cy="-25" r="3">
+        <animate attributeName="r" values="3;4;3" dur="0.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="-25" cy="25" r="3">
+        <animate attributeName="r" values="3;4;3" dur="0.7s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="25" cy="25" r="3">
+        <animate attributeName="r" values="3;4;3" dur="0.5s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+  </g>
+
+  <!-- Coin -->
+  <g transform="translate(301, 256)">
+    <circle cx="0" cy="0" r="45" fill="#1e293b"/>
+    <circle cx="0" cy="0" r="35" fill="none" stroke="#334155" stroke-width="2"/>
+    <circle cx="0" cy="0" r="25" fill="none" stroke="#334155" stroke-width="2"/>
+  </g>
+
+  <!-- Central impact flash -->
+  <g transform="translate(256, 256)">
+    <circle cx="0" cy="0" r="15" fill="#f0f9ff">
+      <animate attributeName="r" values="15;18;15" dur="0.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.8;1" dur="0.5s" repeatCount="indefinite"/>
+    </circle>
+    <!-- Burst lines -->
+    <g stroke="#f0f9ff" stroke-width="3" stroke-linecap="round">
+      <path d="M-10 -10 L10 10">
+        <animate attributeName="stroke-width" values="3;4;3" dur="0.5s" repeatCount="indefinite"/>
+      </path>
+      <path d="M10 -10 L-10 10">
+        <animate attributeName="stroke-width" values="3;4;3" dur="0.5s" repeatCount="indefinite"/>
+      </path>
+      <path d="M0 -14 L0 14">
+        <animate attributeName="stroke-width" values="3;4;3" dur="0.5s" repeatCount="indefinite"/>
+      </path>
+      <path d="M-14 0 L14 0">
+        <animate attributeName="stroke-width" values="3;4;3" dur="0.5s" repeatCount="indefinite"/>
+      </path>
+    </g>
+  </g>
+
+  <!-- Striker -->
+  <g transform="translate(211, 256)">
+    <circle cx="0" cy="0" r="70" fill="url(#strikerGradient)"/>
+    <!-- Inner circles of striker -->
+    <circle cx="0" cy="0" r="55" fill="none" stroke="#e0f2fe" stroke-width="2"/>
+    <circle cx="0" cy="0" r="40" fill="none" stroke="#e0f2fe" stroke-width="2"/>
+    <circle cx="0" cy="0" r="25" fill="none" stroke="#e0f2fe" stroke-width="2"/>
+    <!-- Center dot -->
+    <circle cx="0" cy="0" r="8" fill="#e0f2fe"/>
+  </g>
+
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="strikerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0f9ff"/>
+      <stop offset="100%" style="stop-color:#e0f2fe"/>
+    </linearGradient>
+  </defs>
+</svg>

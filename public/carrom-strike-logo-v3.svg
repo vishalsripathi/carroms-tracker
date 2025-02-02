@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Coin (placed first so striker overlaps) -->
+  <g transform="translate(286, 256)">
+    <circle cx="0" cy="0" r="45" fill="#1e293b"/>
+    <circle cx="0" cy="0" r="35" fill="none" stroke="#334155" stroke-width="2"/>
+    <circle cx="0" cy="0" r="25" fill="none" stroke="#334155" stroke-width="2"/>
+  </g>
+
+  <!-- Impact spark at intersection -->
+  <g transform="translate(241, 256)" opacity="0.9">
+    <!-- Centered burst -->
+    <circle cx="0" cy="0" r="12" fill="#7dd3fc">
+      <animate attributeName="r" values="12;14;12" dur="0.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;1;0.9" dur="0.5s" repeatCount="indefinite"/>
+    </circle>
+    <!-- Sharp rays -->
+    <g stroke="#f0f9ff" stroke-width="3" stroke-linecap="round">
+      <path d="M-8 -8 L8 8"/>
+      <path d="M8 -8 L-8 8"/>
+      <path d="M0 -11 L0 11"/>
+      <path d="M-11 0 L11 0"/>
+    </g>
+  </g>
+
+  <!-- Striker overlapping with coin -->
+  <g transform="translate(196, 256)">
+    <circle cx="0" cy="0" r="70" fill="url(#strikerGradient)"/>
+    <!-- Inner circles of striker -->
+    <circle cx="0" cy="0" r="55" fill="none" stroke="#e0f2fe" stroke-width="2"/>
+    <circle cx="0" cy="0" r="40" fill="none" stroke="#e0f2fe" stroke-width="2"/>
+    <circle cx="0" cy="0" r="25" fill="none" stroke="#e0f2fe" stroke-width="2"/>
+    <!-- Center dot -->
+    <circle cx="0" cy="0" r="8" fill="#e0f2fe"/>
+  </g>
+
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="strikerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0f9ff"/>
+      <stop offset="100%" style="stop-color:#e0f2fe"/>
+    </linearGradient>
+  </defs>
+</svg>

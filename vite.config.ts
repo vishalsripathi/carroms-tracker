@@ -14,14 +14,20 @@ export default defineConfig({
         name: 'Carrom Tracker',
         short_name: 'Carrom',
         description: 'Track your carrom matches and statistics',
-        theme_color: '#4F46E5',
-        background_color: '#ffffff',
+        theme_color: '#0f172a', // Dark theme background
+        background_color: '#0f172a',
         display: 'standalone',
         icons: [
           {
-            src: '/vite.svg', // Update with your icon
-            sizes: '192x192',
+            src: '/favicon.svg',
+            sizes: '32x32',
             type: 'image/svg+xml'
+          },
+          {
+            src: '/logo.svg',
+            sizes: '192x192 512x512',
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
           }
         ]
       }
