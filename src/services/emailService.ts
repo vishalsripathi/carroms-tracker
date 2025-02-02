@@ -157,7 +157,6 @@ class EmailService {
                 <h1 class="logo">🎯 Carrom Tracker</h1>
               </div>
               <div class="content">
-                <div class="avatar">${data.name[0]}</div>
                 <h2 style="text-align: center; margin-bottom: 24px;">Welcome, ${data.name}! 🎉</h2>
                 
                 <div class="card">
@@ -175,7 +174,6 @@ class EmailService {
                 <div class="card">
                   <h3>Quick Start Guide</h3>
                   <ul style="padding-left: 20px;">
-                    <li>Update your profile information</li>
                     <li>Join or create matches</li>
                     <li>Track your statistics</li>
                     <li>Connect with other players</li>
@@ -184,7 +182,7 @@ class EmailService {
 
                 <div style="text-align: center;">
                   <a href="${this.APP_URL}/profile" class="button">
-                    View Your Profile
+                    Login to application
                   </a>
                 </div>
               </div>
@@ -204,7 +202,7 @@ class EmailService {
               </div>
               <div class="content">
                 <div class="greeting">
-                  Hey there! Get ready for an exciting match! 🎯
+                  Hey there! Get ready for an exciting match!, New Match Scheduled by ${data.createdByName} 🎯
                 </div>
 
                 <table>
@@ -217,16 +215,16 @@ class EmailService {
                   </tr>
                   <tr>
                     <td>Team 1</td>
-                    <td>${data.team1Players.join(' & ')}</td>
+                    <td>${data.team1PlayerNames.join(' & ')}</td>
                   </tr>
                   <tr>
                     <td>Team 2</td>
-                    <td>${data.team2Players.join(' & ')}</td>
+                    <td>${data.team2PlayerNames.join(' & ')}</td>
                   </tr>
                 </table>
 
                 <div class="message">
-                  Don't forget to warm up before the match! See you at the table! 🚀
+                  Don't forget to warm up before the match! See you at the table! Good luck to all players! 🚀
                 </div>
 
                 <div style="text-align: center;">
@@ -240,11 +238,9 @@ class EmailService {
           `
         };
 
-      case 'matchCompleted': {
-        const winningTeam = data.winner === 'team1' ? 1 : 2;
-        
+      case 'matchCompleted':
         return {
-          subject: `🏆 Match Results - Team ${winningTeam} Wins!`,
+          subject: '🏆 Match Results',
           html: `
             <style>${this.baseStyles}</style>
             <div class="container">
@@ -253,7 +249,7 @@ class EmailService {
               </div>
               <div class="content">
                 <div class="greeting">
-                  Match Complete! Team ${winningTeam} Takes the Win! 🏆
+                  Match Results Are In! 🏆
                 </div>
 
                 <table>
@@ -261,25 +257,21 @@ class EmailService {
                     <th colspan="2">Match Results</th>
                   </tr>
                   <tr>
-                    <td>Team 1 Score</td>
+                    <td>Team 1 (${data.team1PlayerNames.join(' & ')})</td>
                     <td class="highlight">${data.team1Score}</td>
                   </tr>
                   <tr>
-                    <td>Team 2 Score</td>
+                    <td>Team 2 (${data.team2PlayerNames.join(' & ')})</td>
                     <td class="highlight">${data.team2Score}</td>
                   </tr>
                   <tr>
-                    <td>Team 1 Players</td>
-                    <td>${data.team1Players.join(' & ')}</td>
-                  </tr>
-                  <tr>
-                    <td>Team 2 Players</td>
-                    <td>${data.team2Players.join(' & ')}</td>
+                    <td>Winner</td>
+                    <td class="highlight">Team ${data.winner === 'team1' ? '1' : '2'} 🎉</td>
                   </tr>
                 </table>
 
                 <div class="message">
-                  Great game everyone! Check out the updated rankings and stats! 🎯
+                  Great game everyone! Check out the updated rankings and stats! 📊
                 </div>
 
                 <div style="text-align: center;">
@@ -292,7 +284,6 @@ class EmailService {
             </div>
           `
         };
-      }
 
       case 'matchRescheduled':
         return {
@@ -305,7 +296,7 @@ class EmailService {
               </div>
               <div class="content">
                 <div class="greeting">
-                  Important: Your Match Has Been Rescheduled! ⏰
+                  Match Has Been Rescheduled by ${data.updatedByName} ⏰
                 </div>
 
                 <table>
@@ -322,11 +313,11 @@ class EmailService {
                   </tr>
                   <tr>
                     <td>Team 1</td>
-                    <td>${data.team1Players.join(' & ')}</td>
+                    <td>${data.team1PlayerNames.join(' & ')}</td>
                   </tr>
                   <tr>
                     <td>Team 2</td>
-                    <td>${data.team2Players.join(' & ')}</td>
+                    <td>${data.team2PlayerNames.join(' & ')}</td>
                   </tr>
                 </table>
 
@@ -350,68 +341,100 @@ class EmailService {
     }
   }
 
-  // Implement the sending methods for each template...
-  async sendPlayerCreatedEmail(player: Player) {
-    const template = this.getEmailTemplate('playerCreated', {
-      name: player.name,
-      email: player.email,
-      availability: player.availability.status
-    });
-
-    return this.sendEmail({
-      to: player.email,
-      ...template
+  // Helper method to get player names from IDs
+  private getPlayerNames(playerIds: string[], players: Player[]): string[] {
+    return playerIds.map(id => {
+      const player = players.find(p => p.id === id);
+      return player ? player.name : 'Unknown Player';
     });
   }
+  
+    // Implement the sending methods for each template...
+    async sendPlayerCreatedEmail(player: Player) {
+      const template = this.getEmailTemplate('playerCreated', {
+        name: player.name,
+        email: player.email,
+        availability: player.availability.status
+      });
+  
+      return this.sendEmail({
+        to: player.email,
+        ...template
+      });
+    }
 
-  async sendMatchScheduledEmail(match: Match, recipients: string[]) {
+  async sendMatchScheduledEmail(match: Match, players: Player[]) {
+    const team1PlayerNames = this.getPlayerNames(match.teams.team1.players, players);
+    const team2PlayerNames = this.getPlayerNames(match.teams.team2.players, players);
+    
     const template = this.getEmailTemplate('matchScheduled', {
       date: match.date,
-      team1Players: match.teams.team1.players,
-      team2Players: match.teams.team2.players
+      team1PlayerNames,
+      team2PlayerNames,
+      createdByName: match.createdByName || 'Unknown User'
     });
 
+    // Get all player emails
+    const playerEmails = [
+      ...match.teams.team1.players,
+      ...match.teams.team2.players
+    ]
+      .map(id => players.find(p => p.id === id)?.email)
+      .filter((email): email is string => email !== undefined);
+
     return Promise.all(
-      recipients.map(recipient =>
+      playerEmails.map(email =>
         this.sendEmail({
-          to: recipient,
+          to: email,
           ...template
         })
       )
     );
   }
 
-  async sendMatchCompletedEmail(match: Match, recipients: string[]) {
+  async sendMatchCompletedEmail(match: Match, players: Player[], recipients: string[]) {
+    const team1PlayerNames = this.getPlayerNames(match.teams.team1.players, players);
+    const team2PlayerNames = this.getPlayerNames(match.teams.team2.players, players);
+
     const template = this.getEmailTemplate('matchCompleted', {
-      team1Players: match.teams.team1.players,
-      team2Players: match.teams.team2.players,
+      team1PlayerNames,
+      team2PlayerNames,
       team1Score: match.teams.team1.score,
       team2Score: match.teams.team2.score,
       winner: match.winner
     });
 
     return Promise.all(
-      recipients.map(recipient =>
+      recipients.map(email =>
         this.sendEmail({
-          to: recipient,
+          to: email,
           ...template
         })
       )
     );
   }
 
-  async sendMatchRescheduledEmail(match: Match, oldDate: Date, recipients: string[]) {
+  async sendMatchRescheduledEmail(
+    match: Match,
+    oldDate: Date,
+    players: Player[],
+    recipients: string[]
+  ) {
+    const team1PlayerNames = this.getPlayerNames(match.teams.team1.players, players);
+    const team2PlayerNames = this.getPlayerNames(match.teams.team2.players, players);
+
     const template = this.getEmailTemplate('matchRescheduled', {
       oldDate,
       newDate: match.date,
-      team1Players: match.teams.team1.players,
-      team2Players: match.teams.team2.players
+      team1PlayerNames,
+      team2PlayerNames,
+      updatedByName: match.createdByName || 'Unknown User'
     });
 
     return Promise.all(
-      recipients.map(recipient =>
+      recipients.map(email =>
         this.sendEmail({
-          to: recipient,
+          to: email,
           ...template
         })
       )

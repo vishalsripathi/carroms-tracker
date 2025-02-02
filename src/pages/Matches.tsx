@@ -166,11 +166,6 @@ const Matches = () => {
       // Send match scheduled email
       try {
         // Get all player emails for both teams
-        const allPlayerIds = [...formData.team1Players, ...formData.team2Players];
-        const playerEmails = players
-          .filter(player => allPlayerIds.includes(player.id))
-          .map(player => player.email);
-
         // Create match object with proper date
         const matchForEmail: Match = {
           id: docRef.id,
@@ -188,7 +183,7 @@ const Matches = () => {
           history: [
             {
               type: "creation",
-              timestamp: newMatch.createdAt, // Using FirebaseTimestamp directly
+              timestamp: newMatch.createdAt,
               userId: user.uid,
               userName: user.displayName || 'Unknown User',
               data: {}
@@ -196,7 +191,7 @@ const Matches = () => {
           ]
         };
 
-        await emailService.sendMatchScheduledEmail(matchForEmail, playerEmails);
+        await emailService.sendMatchScheduledEmail(matchForEmail, players);
       } catch (emailError) {
         console.error('Failed to send match scheduled email:', emailError);
         // Don't block the match creation if email fails
@@ -515,6 +510,7 @@ const Matches = () => {
                     match={match}
                     onUpdate={fetchData}
                     getPlayerName={getPlayerName}
+                    players={players}
                   />
                 </motion.div>
               ))
