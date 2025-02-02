@@ -174,7 +174,7 @@ class EmailService {
                 <div class="card">
                   <h3>Quick Start Guide</h3>
                   <ul style="padding-left: 20px;">
-                    <li>Join or create matches</li>
+                    <li>create matches</li>
                     <li>Track your statistics</li>
                     <li>Connect with other players</li>
                   </ul>
@@ -211,7 +211,7 @@ class EmailService {
                   </tr>
                   <tr>
                     <td>Date & Time</td>
-                    <td class="highlight">${new Date(data.date).toLocaleString()}</td>
+                    <td class="highlight">${new Date(data.date + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
                   </tr>
                   <tr>
                     <td>Team 1</td>
@@ -296,7 +296,7 @@ class EmailService {
               </div>
               <div class="content">
                 <div class="greeting">
-                  Match Has Been Rescheduled by ${data.updatedByName} ⏰
+                  Match Has Been Rescheduled ⏰
                 </div>
 
                 <table>
@@ -305,11 +305,11 @@ class EmailService {
                   </tr>
                   <tr>
                     <td>Previous Date</td>
-                    <td>${new Date(data.oldDate).toLocaleString()}</td>
+                    <td>${new Date(data.oldDate + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
                   </tr>
                   <tr>
                     <td>New Date</td>
-                    <td class="highlight">${new Date(data.newDate).toLocaleString()}</td>
+                    <td class="highlight">${new Date(data.newDate + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
                   </tr>
                   <tr>
                     <td>Team 1</td>
@@ -348,7 +348,7 @@ class EmailService {
       return player ? player.name : 'Unknown Player';
     });
   }
-  
+
     // Implement the sending methods for each template...
     async sendPlayerCreatedEmail(player: Player) {
       const template = this.getEmailTemplate('playerCreated', {

@@ -26,6 +26,7 @@ import { Avatar } from "../components/ui/Avatar";
 import { Badge } from "../components/ui/Badge";
 import { UserPlus, Trophy, Users, ChartLine, Star } from "lucide-react";
 import { emailService } from "../services/emailService";
+import LoadingSpinner from "../components/ui/LoadingSpinner/LoadingSpinner";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -54,6 +55,7 @@ const Players = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState<PlayerFormData>({
@@ -153,6 +155,7 @@ const Players = () => {
     if (!validateForm()) return;
 
     try {
+      setIsSubmitting(true); 
       setLoading(true);
       const timestamp = Timestamp.now();
 
@@ -211,6 +214,7 @@ const Players = () => {
       console.error(err);
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
   const handleUpdateAvailability = async (
@@ -468,7 +472,15 @@ const Players = () => {
       {/* Add Player Dialog */}
       <Dialog open={showAddForm} onClose={() => setShowAddForm(false)}>
         <DialogHeader>Add New Player</DialogHeader>
-        <DialogContent>
+        <DialogContent className="relative">
+          {isSubmitting && (
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="flex flex-col items-center gap-2">
+                <LoadingSpinner size="lg" />
+                <p className="text-sm text-muted-foreground">Adding player...</p>
+              </div>
+            </div>
+          )}
           <form onSubmit={handleAddPlayer} className="space-y-4">
             <div className="space-y-2">
               <Input
@@ -534,10 +546,17 @@ const Players = () => {
               setErrors({ name: "", email: "", availability: "" }); // Reset errors
               setFormData({ name: "", email: "", availability: "available" }); // Reset form
             }}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
-          <Button onClick={handleAddPlayer}>Add Player</Button>
+          <Button 
+            onClick={handleAddPlayer}
+            disabled={isSubmitting}
+            loading={isSubmitting}
+          >
+            {isSubmitting ? 'Adding Player...' : 'Add Player'}
+          </Button>
         </DialogFooter>
       </Dialog>
 

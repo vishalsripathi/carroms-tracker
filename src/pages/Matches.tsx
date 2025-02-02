@@ -51,6 +51,7 @@ const Matches = () => {
     team1: ["", ""],
     team2: ["", ""],
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const user = useAuthStore((state) => state.user);
 
@@ -133,6 +134,7 @@ const Matches = () => {
     if (!user) return;
 
     try {
+      setIsSubmitting(true);
       setLoading(true);
       const newMatch = {
         date: Timestamp.fromDate(formData.date),
@@ -210,6 +212,7 @@ const Matches = () => {
       console.error(err);
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     };
   };
 
@@ -341,7 +344,15 @@ const Matches = () => {
 
         {/* Add Match Dialog */}
         <Dialog open={showAddForm} onClose={() => setShowAddForm(false)}>
-          <DialogContent className="overflow-visible">
+          <DialogContent className="overflow-visible relative">
+            {isSubmitting && (
+              <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="flex flex-col items-center gap-2">
+                  <LoadingSpinner size="lg" />
+                  <p className="text-sm text-muted-foreground">Scheduling match...</p>
+                </div>
+              </div>
+            )}
             <h2 className="text-xl font-bold mb-4">Schedule New Match</h2>
             <form onSubmit={handleAddMatch} className="space-y-4">
               {/* Date Picker */}
@@ -467,10 +478,17 @@ const Matches = () => {
                   type="button"
                   variant="outline"
                   onClick={() => setShowAddForm(false)}
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Schedule Match</Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  loading={isSubmitting}
+                >
+                  {isSubmitting ? 'Scheduling...' : 'Schedule Match'}
+                </Button>
               </div>
             </form>
           </DialogContent>
