@@ -1,8 +1,6 @@
-
-
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: 'class',
+  darkMode: "class",
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
@@ -46,7 +44,28 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      spacing: {
+        safe: "env(safe-area-inset-bottom, 16px)",
+      },
     },
   },
-  plugins: [require("tailwindcss-animate")],
-}
+  plugins: [
+    require("tailwindcss-animate"),
+    function ({ addUtilities }) {
+      addUtilities({
+        ".pb-safe": {
+          paddingBottom: "env(safe-area-inset-bottom, 16px)",
+        },
+        ".pt-safe": {
+          paddingTop: "env(safe-area-inset-top, 0px)",
+        },
+        ".mb-safe": {
+          marginBottom: "env(safe-area-inset-bottom, 16px)",
+        },
+        ".mt-safe": {
+          marginTop: "env(safe-area-inset-top, 0px)",
+        },
+      });
+    },
+  ],
+};

@@ -23,7 +23,8 @@ const OfflineIndicator = () => {
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -50 }}
-          className="fixed top-0 left-0 right-0 bg-yellow-500 text-white px-4 py-2 flex items-center justify-center z-50"
+          className="fixed top-0 left-0 right-0 bg-yellow-500/90 dark:bg-yellow-600/90 backdrop-blur-sm text-white px-4 py-2 flex items-center justify-center z-50"
+          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }} // Add safe area padding for notch
         >
           <WifiOff className="h-4 w-4 mr-2" />
           <span className="text-sm font-medium">

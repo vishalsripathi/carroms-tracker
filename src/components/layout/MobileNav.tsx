@@ -15,7 +15,8 @@ const MobileNav = () => {
 
   return (
     <motion.div 
-      className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40"
+      className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 pb-safe"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
