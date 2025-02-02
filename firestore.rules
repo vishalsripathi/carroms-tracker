@@ -1,33 +1,42 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Basic user validation
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
     // Helper function to check email uniqueness
     function isEmailUnique(email) {
-      let players = collection('players');
-      return !exists(/databases/$(database)/documents/players/$(players.where('email', '==', email).limit(1)));
+      let existing = exists(/databases/$(database)/documents/players/$(players.where('email', '==', email).limit(1)));
+      return !existing;
     }
     
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // User Collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId;
     }
     
+    // Matches Collection
+    match /matches/{matchId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+    }
+    
+    // Players Collection - Updated with email uniqueness check
     match /players/{playerId} {
-      allow read: if true;
-      // Modified write rule to check email uniqueness
-      allow create: if request.auth != null 
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() 
         && isEmailUnique(request.resource.data.email.lower());
-      allow update: if request.auth != null 
+      allow update: if isSignedIn() 
         && (
-          // Don't allow email updates
+          // Don't allow email updates or require same email
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['email'])
           || request.resource.data.email == resource.data.email
         );
-      allow delete: if request.auth != null;
-    }
-    
-    match /matches/{matchId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow delete: if isSignedIn();
     }
   }
 }
