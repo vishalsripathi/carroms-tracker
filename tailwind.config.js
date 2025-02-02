@@ -51,20 +51,22 @@ export default {
   },
   plugins: [
     require("tailwindcss-animate"),
-    function ({ addUtilities }) {
+    function({ addUtilities }) {
       addUtilities({
-        ".pb-safe": {
-          paddingBottom: "env(safe-area-inset-bottom, 16px)",
-        },
-        ".pt-safe": {
-          paddingTop: "env(safe-area-inset-top, 0px)",
-        },
-        ".mb-safe": {
-          marginBottom: "env(safe-area-inset-bottom, 16px)",
-        },
-        ".mt-safe": {
-          marginTop: "env(safe-area-inset-top, 0px)",
-        },
+        '@media (max-width: 767px)': {
+          '.pb-safe': {
+            paddingBottom: 'env(safe-area-inset-bottom, 16px)',
+          },
+          '.pt-safe': {
+            paddingTop: 'env(safe-area-inset-top, 16px)',
+          },
+          '.mb-safe': {
+            marginBottom: 'env(safe-area-inset-bottom, 16px)',
+          },
+          '.mt-safe': {
+            marginTop: 'env(safe-area-inset-top, 16px)',
+          }
+        }
       });
     },
   ],
