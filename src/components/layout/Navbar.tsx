@@ -20,7 +20,7 @@ const Navbar: React.FC<NavbarProps> = ({ children, onMenuClick, showMenuButton =
   return (
     <nav className="bg-card shadow-md fixed w-full top-0 z-40">
       <div className="md:hidden w-full" style={{ 
-        paddingTop: 'env(safe-area-inset-top, 16px)',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
         backgroundColor: 'hsl(var(--background))'
       }} />
       <div className="max-w-7xl mx-auto px-4">
