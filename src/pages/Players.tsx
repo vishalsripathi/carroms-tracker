@@ -27,6 +27,7 @@ import { Badge } from "../components/ui/Badge";
 import { UserPlus, Trophy, Users, ChartLine, Star } from "lucide-react";
 import { emailService } from "../services/emailService";
 import LoadingSpinner from "../components/ui/LoadingSpinner/LoadingSpinner";
+import { checkEmailExists } from "../services/firebaseService";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -153,14 +154,26 @@ const Players = () => {
   const handleAddPlayer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+  
     try {
-      setIsSubmitting(true); 
+      setIsSubmitting(true);
       setLoading(true);
+  
+      // Check if email already exists
+      const emailExists = await checkEmailExists(formData.email);
+      if (emailExists) {
+        setErrors(prev => ({
+          ...prev,
+          email: "A player with this email already exists"
+        }));
+        return;
+      }
+  
       const timestamp = Timestamp.now();
-
+  
       const firestorePlayer = {
         ...formData,
+        email: formData.email.toLowerCase(), // Store email in lowercase
         stats: {
           totalGames: 0,
           wins: 0,
@@ -185,9 +198,9 @@ const Players = () => {
         },
         createdAt: timestamp,
       };
-
+  
       const docRef = await addDoc(collection(db, 'players'), firestorePlayer);
-
+  
       const statePlayer: Player = {
         ...firestorePlayer,
         id: docRef.id,
@@ -197,20 +210,32 @@ const Players = () => {
         },
         createdAt: timestamp.toDate(),
       };
-
+  
       // Send welcome email
       try {
         await emailService.sendPlayerCreatedEmail(statePlayer);
+        // Show success state in the dialog
+        setPlayers((prevPlayers) => [...prevPlayers, statePlayer]);
+        setShowAddForm(false);
+        setFormData({ name: "", email: "", availability: "available" });
       } catch (emailError) {
         console.error('Failed to send welcome email:', emailError);
-        // Don't block the player creation if email fails
+        // Player is created but email failed - you might want to show a warning
+        setPlayers((prevPlayers) => [...prevPlayers, statePlayer]);
+        setShowAddForm(false);
+        setFormData({ name: "", email: "", availability: "available" });
+        setError('Player created but welcome email could not be sent');
       }
-
-      setPlayers((prevPlayers) => [...prevPlayers, statePlayer]);
-      setShowAddForm(false);
-      setFormData({ name: "", email: "", availability: "available" });
     } catch (err) {
-      setError('Failed to add player');
+      let errorMessage = 'Failed to add player';
+      if (err instanceof Error) {
+        if (err.message.includes('permission-denied')) {
+          errorMessage = 'You do not have permission to add players';
+        } else if (err.message.includes('already-exists')) {
+          errorMessage = 'A player with this email already exists';
+        }
+      }
+      setError(errorMessage);
       console.error(err);
     } finally {
       setLoading(false);

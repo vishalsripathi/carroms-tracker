@@ -35,6 +35,19 @@ import {
       };
     }
   };
+
+  export const checkEmailExists = async (email: string): Promise<boolean> => {
+    try {
+      const playersRef = collection(db, 'players');
+      const q = query(playersRef, where('email', '==', email.toLowerCase()));
+      const querySnapshot = await getDocs(q);
+      
+      return !querySnapshot.empty;
+    } catch (error) {
+      console.error('Error checking email existence:', error);
+      throw error;
+    }
+  };
   
   // Matches
   export const createMatch = async (matchData: any): Promise<FirebaseResponse<DocumentData>> => {
