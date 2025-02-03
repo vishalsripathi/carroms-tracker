@@ -7,6 +7,7 @@ import {
   updateDoc,
   doc,
   Timestamp,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { Player, PlayerFormData } from "../types/player";
@@ -28,6 +29,7 @@ import { UserPlus, Trophy, Users, ChartLine, Star } from "lucide-react";
 import { emailService } from "../services/emailService";
 import LoadingSpinner from "../components/ui/LoadingSpinner/LoadingSpinner";
 import { checkEmailExists } from "../services/firebaseService";
+import { useAuthStore } from "../store/authStore";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -69,6 +71,8 @@ const Players = () => {
     email: "",
     availability: "",
   });
+
+  const user = useAuthStore((state) => state.user);
 
   const statisticsService = useMemo(() => new StatisticsService(), []);
 
@@ -154,6 +158,7 @@ const Players = () => {
   const handleAddPlayer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+    if (!user) return;
   
     try {
       setIsSubmitting(true);
@@ -173,7 +178,7 @@ const Players = () => {
   
       const firestorePlayer = {
         ...formData,
-        email: formData.email.toLowerCase(), // Store email in lowercase
+        email: formData.email.toLowerCase(),
         stats: {
           totalGames: 0,
           wins: 0,
@@ -197,6 +202,17 @@ const Players = () => {
           lastUpdated: timestamp,
         },
         createdAt: timestamp,
+        createdBy: user.uid,
+        createdByName: user.displayName || 'Unknown User',
+        history: [{
+          type: 'creation' as const,
+          timestamp: timestamp,
+          userId: user.uid,
+          userName: user.displayName || 'Unknown User',
+          data: {
+            availability: formData.availability
+          }
+        }]
       };
   
       const docRef = await addDoc(collection(db, 'players'), firestorePlayer);
@@ -209,6 +225,9 @@ const Players = () => {
           lastUpdated: timestamp.toDate(),
         },
         createdAt: timestamp.toDate(),
+        stats: {
+          ...firestorePlayer.stats
+        }
       };
   
       // Send welcome email
@@ -246,7 +265,27 @@ const Players = () => {
     playerId: string,
     status: "available" | "unavailable"
   ) => {
+    if (!user) return;
+
     try {
+      const historyEvent = {
+        type: 'availability_change',
+        timestamp: Timestamp.now(),
+        userId: user.uid,
+        userName: user.displayName || 'Unknown User',
+        data: {
+          field: 'availability',
+          oldValue: players.find(p => p.id === playerId)?.availability.status,
+          newValue: status
+        }
+      };
+  
+      await updateDoc(doc(db, "players", playerId), {
+        "availability.status": status,
+        "availability.lastUpdated": Timestamp.now(),
+        history: arrayUnion(historyEvent)
+      });
+
       await updateDoc(doc(db, "players", playerId), {
         "availability.status": status,
         "availability.lastUpdated": Timestamp.now(),

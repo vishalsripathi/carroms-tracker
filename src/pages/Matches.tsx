@@ -136,6 +136,10 @@ const Matches = () => {
     try {
       setIsSubmitting(true);
       setLoading(true);
+
+      const isTeamGenerated = showTeamGenerator;
+
+
       const newMatch = {
         date: Timestamp.fromDate(formData.date),
         teams: {
@@ -153,14 +157,20 @@ const Matches = () => {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         createdBy: user.uid,
-        history: [
-          {
-            type: "creation",
-            timestamp: new Date(),
-            userId: user.uid,
-            data: {},
-          },
-        ],
+        createdByName: user.displayName || 'Unknown User',
+        history: [{
+          type: "creation",
+          timestamp: Timestamp.now(),
+          userId: user.uid,
+          userName: user.displayName || 'Unknown User',
+          data: {
+            teamGenerated: isTeamGenerated,
+            teams: {
+              team1: formData.team1Players,
+              team2: formData.team2Players
+            }
+          }
+        }],
       };
 
       const docRef = await addDoc(collection(db, 'matches'), newMatch);

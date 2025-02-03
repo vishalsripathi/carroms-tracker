@@ -5,6 +5,10 @@ interface TeamGenerationResult {
   teams: [string, string][];
   teamNames: { team1: string[]; team2: string[] };
   strengths: { team1: number; team2: number };
+  generatedBy?: {
+    userId: string;
+    userName: string;
+  };
 }
 
 export class TeamGenerationService {
@@ -37,7 +41,11 @@ export class TeamGenerationService {
     return shuffled;
   }
 
-  async generateTeams(availablePlayers: Player[]): Promise<TeamGenerationResult> {
+  async generateTeams(
+    availablePlayers: Player[], 
+    userId: string, 
+    userName: string
+  ): Promise<TeamGenerationResult> {
     if (!availablePlayers || availablePlayers.length < 4) {
       throw new Error('Need at least 4 players to generate teams');
     }
@@ -95,7 +103,11 @@ export class TeamGenerationService {
     return {
       teams: bestTeams,
       teamNames,
-      strengths: bestStrengths
+      strengths: bestStrengths,
+      generatedBy: {
+        userId,
+        userName
+      }
     };
   }
 }

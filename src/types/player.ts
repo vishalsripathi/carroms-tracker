@@ -1,3 +1,4 @@
+import { FirebaseTimestamp } from './match';
 import { BasicStats } from './stats';
 
 export interface Player {
@@ -22,6 +23,24 @@ export interface Player {
   };
   lastPlayed?: Date;
   createdAt: Date;
+  createdBy: string;        // Add these
+  createdByName: string;    // Add these
+  history: PlayerHistoryEvent[]; // Add this
+}
+
+export interface PlayerHistoryEvent {
+  type: 'creation' | 'update' | 'availability_change';
+  timestamp: FirebaseTimestamp;
+  userId: string;
+  userName: string;
+  data: {
+    field?: string;
+    teamGenerated?: boolean;
+    teams?: any;
+    availability?: any;
+    oldValue?: any;
+    newValue?: any;
+  };
 }
 
 export interface PlayerFormData {

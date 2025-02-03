@@ -16,7 +16,7 @@ export interface Team {
 
 export interface MatchHistoryEvent {
   userId: string;
-  userName?: string;
+  userName: string;
   timestamp: FirebaseTimestamp;
   type: 
   | 'creation' 
@@ -31,6 +31,7 @@ export interface MatchHistoryEvent {
   | 'deletion'
   | 'comment';
   data: {
+    reason?: string;
     // Reschedule data
     newDate?: FirebaseTimestamp;
     oldDate?: FirebaseTimestamp;
@@ -56,6 +57,18 @@ export interface MatchHistoryEvent {
       team2Score: number;
     };
     winner?: 'team1' | 'team2';
+    
+    // Creation specific data
+    teamGenerated?: boolean;
+    teams?: {
+      team1: string[];
+      team2: string[];
+    };
+
+    // Substitution data
+    oldPlayerId?: string;
+    newPlayerId?: string;
+    team?: 'team1' | 'team2';
     
     // Comment data
     text?: string;

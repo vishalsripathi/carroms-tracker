@@ -108,7 +108,8 @@ const SubstitutionModal = ({
         team,
         playerToReplace,
         selectedPlayerId,
-        user.uid
+        user.uid,
+        user.displayName || 'Unknown User'
       );
       onSubstitution();
       onClose();

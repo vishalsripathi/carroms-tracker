@@ -96,7 +96,7 @@ const EventCard: React.FC<{
 }> = ({ event, renderContent }) => {
   const colors = getEventColor(event.type);
   const IconComponent = getEventIcon(event.type);
-  const userName = event.userName || 'Unknown User';
+  const userName = event.userName || 'Unknown User'; // Fallback for older events
 
   return (
     <motion.div
@@ -134,6 +134,7 @@ const EventCard: React.FC<{
 
 const MatchHistoryDialog: React.FC<MatchHistoryDialogProps> = ({
   match,
+  getPlayerName,
   isOpen,
   onClose
 }) => {
@@ -145,13 +146,18 @@ const MatchHistoryDialog: React.FC<MatchHistoryDialogProps> = ({
         return (
           <div className="text-sm text-gray-600 dark:text-gray-400">
             Created the match
+            {data.teamGenerated && (
+              <span className="ml-1 text-primary-600 dark:text-primary-400">
+                using team generator
+              </span>
+            )}
           </div>
         );
 
       case 'start':
         return (
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Match started
+            Started the match
           </div>
         );
 
@@ -174,18 +180,30 @@ const MatchHistoryDialog: React.FC<MatchHistoryDialogProps> = ({
       case 'substitution':
         return (
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Player substitution made
+            Substituted {getPlayerName(data.oldPlayerId || '')} with {getPlayerName(data.newPlayerId || '')} 
+            in Team {data.team === 'team1' ? '1' : '2'}
           </div>
         );
 
       case 'completion':
         return (
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Match completed
+          <div className="space-y-2">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Match completed
+              {data.finalScores && (
+                <span className="ml-2 font-medium">
+                  Final Score: {data.finalScores.team1Score} - {data.finalScores.team2Score}
+                </span>
+              )}
+            </div>
+            {data.winner && (
+              <Badge variant="success">
+                Winner: Team {data.winner === 'team1' ? '1' : '2'}
+              </Badge>
+            )}
           </div>
         );
-
-      case 'status_update':
+        case 'status_update':
         if (!data.newStatus || !data.oldStatus) return null;
         return (
           <div className="flex items-center gap-2 text-sm">
@@ -253,7 +271,7 @@ const MatchHistoryDialog: React.FC<MatchHistoryDialogProps> = ({
             {data.text}
           </div>
         );
-      
+
       default:
         return (
           <div className="text-sm text-gray-500">

@@ -63,12 +63,27 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onUpdate, getPlayerName, p
     setTimeout(() => setError(null), 5000);
   };
 
+  const ensureUserInfo = () => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+    return {
+      uid: user.uid,
+      userName: user.displayName || 'Unknown User'
+    };
+  };
+
   // Match Action Handlers
   const handleScoreUpdate = async () => {
-    if (!user) return;
     try {
+      const userInfo = ensureUserInfo();
       setLoading(true);
-      await matchService.updateMatchScore(match.id, scores, user.uid);
+      await matchService.updateMatchScore(
+        match.id, 
+        scores, 
+        userInfo.uid,
+        userInfo.userName
+      );
       onUpdate();
     } catch (err) {
       handleError(err);
@@ -81,7 +96,8 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onUpdate, getPlayerName, p
     if (!user) return;
     try {
       setLoading(true);
-      await matchService.startMatch(match.id, user.uid);
+      await matchService.startMatch(match.id, user.uid,
+        user.displayName || 'Unknown User');
       onUpdate();
     } catch (err) {
       handleError(err);
@@ -94,7 +110,8 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onUpdate, getPlayerName, p
     if (!user) return;
     try {
       setLoading(true);
-      await matchService.completeMatch(match.id, scores, user.uid);
+      await matchService.completeMatch(match.id, scores, user.uid,
+        user.displayName || 'Unknown User');
 
       // Send match completed email
       try {
@@ -151,7 +168,8 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onUpdate, getPlayerName, p
     if (!user) return;
     try {
         setLoading(true);
-        await matchService.editCompletedMatch(match.id, editScores, user.uid);
+        await matchService.editCompletedMatch(match.id, editScores, user.uid,
+          user.displayName || 'Unknown User');
         // Update local state immediately
         setScores(editScores);
         // Force parent to refetch

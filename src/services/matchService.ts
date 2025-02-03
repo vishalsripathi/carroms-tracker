@@ -151,15 +151,16 @@ class MatchService {
     return team1Score > team2Score ? 'team1' : 'team2';
   }
 
-  startMatch(matchId: string, userId: string): Promise<void> {
+  startMatch(matchId: string, userId: string, userName: string): Promise<void> {
     const matchRef = doc(this.matchesCollection, matchId);
-    return this.updateMatchStatus(matchRef, 'scheduled', 'in_progress', userId);
+    return this.updateMatchStatus(matchRef, 'scheduled', 'in_progress', userId, userName);
   }
 
   updateMatchScore(
     matchId: string, 
     scores: MatchScores,
-    userId: string
+    userId: string,
+    userName: string
   ): Promise<void> {
     const { team1Score, team2Score } = scores;
     
@@ -168,13 +169,14 @@ class MatchService {
     }
 
     const matchRef = doc(this.matchesCollection, matchId);
-    return this.updateScores(matchRef, scores, userId);
+    return this.updateScores(matchRef, scores, userId, userName);
   }
 
   completeMatch(
     matchId: string,
     finalScores: MatchScores,
-    userId: string
+    userId: string,
+    userName: string
   ): Promise<void> {
     const { team1Score, team2Score } = finalScores;
     
@@ -187,13 +189,14 @@ class MatchService {
     }
 
     const matchRef = doc(this.matchesCollection, matchId);
-    return this.completeMatchWithScores(matchRef, finalScores, userId);
+    return this.completeMatchWithScores(matchRef, finalScores, userId, userName);
   }
 
   editCompletedMatch(
     matchId: string,
     scores: MatchScores,
-    userId: string
+    userId: string,
+    userName: string
   ): Promise<void> {
     const { team1Score, team2Score } = scores;
     
@@ -206,7 +209,7 @@ class MatchService {
     }
 
     const matchRef = doc(this.matchesCollection, matchId);
-    return this.editMatchScores(matchRef, scores, userId);
+    return this.editMatchScores(matchRef, scores, userId, userName);
   }
 
   substitutePlayer(
@@ -214,17 +217,19 @@ class MatchService {
     team: 'team1' | 'team2',
     oldPlayerId: string,
     newPlayerId: string,
-    userId: string
+    userId: string,
+    userName: string
   ): Promise<void> {
     const matchRef = doc(this.matchesCollection, matchId);
-    return this.performSubstitution(matchRef, team, oldPlayerId, newPlayerId, userId);
+    return this.performSubstitution(matchRef, team, oldPlayerId, newPlayerId, userId, userName);
   }
 
   private async updateMatchStatus(
     matchRef: DocumentReference,
     fromStatus: string,
     toStatus: string,
-    userId: string
+    userId: string,
+    userName: string
   ): Promise<void> {
     const matchDoc = await getDoc(matchRef);
     
@@ -241,6 +246,7 @@ class MatchService {
       type: 'status_change',
       timestamp: new Date(),
       userId,
+      userName,
       data: { oldStatus: fromStatus, newStatus: toStatus }
     };
 
@@ -254,7 +260,8 @@ class MatchService {
   private async updateScores(
     matchRef: DocumentReference,
     scores: MatchScores,
-    userId: string
+    userId: string,
+    userName: string
   ): Promise<void> {
     const matchDoc = await getDoc(matchRef);
     
@@ -271,6 +278,7 @@ class MatchService {
       type: 'score_update',
       timestamp: new Date(),
       userId,
+      userName,
       data: {
         oldScores: {
           team1: matchData.teams.team1.score,
@@ -291,7 +299,8 @@ class MatchService {
   private async completeMatchWithScores(
     matchRef: DocumentReference,
     scores: MatchScores,
-    userId: string
+    userId: string,
+    userName: string
   ): Promise<void> {
     const matchDoc = await getDoc(matchRef);
     
@@ -309,6 +318,7 @@ class MatchService {
       type: 'match_edit',
       timestamp: new Date(),
       userId,
+      userName,
       data: {
         status: 'completed',
         finalScores: scores,
@@ -330,7 +340,8 @@ class MatchService {
   private async editMatchScores(
     matchRef: DocumentReference,
     scores: MatchScores,
-    userId: string
+    userId: string,
+    userName: string
 ): Promise<void> {
     const matchDoc = await getDoc(matchRef);
     if (!matchDoc.exists()) throw new Error('Match not found');
@@ -342,6 +353,7 @@ class MatchService {
         type: 'score_update',  // Changed from match_edit
         timestamp: Timestamp.now(),
         userId,
+        userName,
         data: {
             oldScores: {
                 team1: matchData.teams.team1.score,
@@ -365,7 +377,8 @@ class MatchService {
     team: 'team1' | 'team2',
     oldPlayerId: string,
     newPlayerId: string,
-    userId: string
+    userId: string,
+    userName: string
   ): Promise<void> {
     const matchDoc = await getDoc(matchRef);
     
@@ -392,6 +405,7 @@ class MatchService {
       type: 'substitution',
       timestamp: new Date(),
       userId,
+      userName,
       data: {
         team,
         oldPlayerId,
