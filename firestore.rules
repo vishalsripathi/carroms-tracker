@@ -8,8 +8,7 @@ service cloud.firestore {
     
     // Helper function to check email uniqueness
     function isEmailUnique(email) {
-      let existing = exists(/databases/$(database)/documents/players/$(players.where('email', '==', email).limit(1)));
-      return !existing;
+      return !exists(/databases/$(database)/documents/players/*[email == email]);
     }
     
     // User Collection
