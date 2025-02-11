@@ -145,6 +145,15 @@ class EmailService {
     </div>
   `;
 
+  private formatDateForEmail(date: Date): string {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
   private getEmailTemplate(templateName: string, data: any): EmailTemplate {
     switch (templateName) {
       case 'playerCreated':
@@ -211,7 +220,7 @@ class EmailService {
                   </tr>
                   <tr>
                     <td>Date & Time</td>
-                    <td class="highlight">${new Date(data.date + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                    <td class="highlight">${this.formatDateForEmail(data.date)}</td>
                   </tr>
                   <tr>
                     <td>Team 1</td>
@@ -305,11 +314,11 @@ class EmailService {
                   </tr>
                   <tr>
                     <td>Previous Date</td>
-                    <td>${new Date(data.oldDate + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                    <td>${this.formatDateForEmail(data.oldDate)}</td>
                   </tr>
                   <tr>
                     <td>New Date</td>
-                    <td class="highlight">${new Date(data.newDate + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                    <td class="highlight">${this.formatDateForEmail(data.newDate)}</td>
                   </tr>
                   <tr>
                     <td>Team 1</td>
